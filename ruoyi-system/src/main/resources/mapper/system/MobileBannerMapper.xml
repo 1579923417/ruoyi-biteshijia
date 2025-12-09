@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.MobileBannerMapper">
+
+    <resultMap type="com.ruoyi.system.domain.MobileBanner" id="MobileBannerResult">
+        <id     property="id"        column="id"        />
+        <result property="title"     column="title"     />
+        <result property="imageUrl"  column="image_url" />
+        <result property="sort"      column="sort"      />
+        <result property="status"    column="status"    />
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, title, image_url, sort, status from mobile_banner
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="MobileBannerResult">
+        <include refid="selectVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.ruoyi.system.domain.MobileBanner" resultMap="MobileBannerResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="title != null and title != ''">
+                and title like concat('%', #{title}, '%')
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+        order by sort asc, id desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.system.domain.MobileBanner" useGeneratedKeys="true" keyProperty="id">
+        insert into mobile_banner(title, image_url, sort, status)
+        values(#{title}, #{imageUrl}, #{sort}, #{status})
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.system.domain.MobileBanner">
+        update mobile_banner
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByIds" parameterType="java.lang.Long">
+        delete from mobile_banner where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateStatus">
+        update mobile_banner set status = #{status} where id = #{id}
+    </update>
+
+</mapper>
