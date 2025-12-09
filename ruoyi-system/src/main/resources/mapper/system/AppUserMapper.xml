@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AppUserMapper">
+
+    <resultMap type="com.ruoyi.system.domain.AppUser" id="AppUserResult">
+        <id     property="id"              column="id"              />
+        <result property="name"            column="name"            />
+        <result property="phone"           column="phone"           />
+        <result property="bankName"        column="bank_name"       />
+        <result property="bankAccount"     column="bank_account"    />
+        <result property="minerCount"      column="miner_count"     />
+        <result property="totalIncome"     column="total_income"    />
+        <result property="yesterdayIncome" column="yesterday_income" />
+        <result property="todayIncome"     column="today_income"    />
+        <result property="updateTime"      column="update_time"     />
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, update_time from app_user
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="AppUserResult">
+        <include refid="selectVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectByPhone" parameterType="java.lang.String" resultMap="AppUserResult">
+        <include refid="selectVo"/>
+        where phone = #{phone} limit 1
+    </select>
+
+    <select id="selectList" parameterType="com.ruoyi.system.domain.AppUser" resultMap="AppUserResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="phone != null and phone != ''">
+                and phone like concat('%', #{phone}, '%')
+            </if>
+            <if test="params.keyword != null and params.keyword != ''">
+                and (name like concat('%', #{params.keyword}, '%') or phone like concat('%', #{params.keyword}, '%'))
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.system.domain.AppUser" useGeneratedKeys="true" keyProperty="id">
+        insert into app_user(password, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income)
+        values(#{password}, #{name}, #{phone}, #{bankName}, #{bankAccount}, #{minerCount}, #{totalIncome}, #{yesterdayIncome}, #{todayIncome})
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.system.domain.AppUser">
+        update app_user
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="bankName != null">bank_name = #{bankName},</if>
+            <if test="bankAccount != null">bank_account = #{bankAccount},</if>
+            <if test="minerCount != null">miner_count = #{minerCount},</if>
+            <if test="password != null">password = #{password},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByIds" parameterType="java.lang.Long">
+        delete from app_user where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
