@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AppUserMinerMapper">
+
+    <resultMap type="com.ruoyi.system.domain.AppUserMiner" id="AppUserMinerResult">
+        <id     property="id"                column="id"                />
+        <result property="userId"            column="user_id"           />
+        <result property="brandId"           column="brand_id"          />
+        <result property="apiCode"           column="api_code"          />
+        <result property="managementFeeRate" column="management_fee_rate" />
+        <result property="totalMined"        column="total_mined"       />
+        <result property="yesterdayMined"    column="yesterday_mined"   />
+        <result property="todayMined"        column="today_mined"       />
+        <result property="totalIncome"       column="total_income"      />
+        <result property="yesterdayIncome"   column="yesterday_income"  />
+        <result property="status"            column="status"            />
+        <result property="createTime"        column="create_time"       />
+        <result property="updateTime"        column="update_time"       />
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, user_id, brand_id, api_code, management_fee_rate, total_mined, yesterday_mined, today_mined, total_income, yesterday_income, status, create_time, update_time from app_user_miner
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="AppUserMinerResult">
+        <include refid="selectVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.ruoyi.system.domain.AppUserMiner" resultMap="AppUserMinerResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="brandId != null">and brand_id = #{brandId}</if>
+            <if test="apiCode != null and apiCode != ''">and api_code like concat('%', #{apiCode}, '%')</if>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.system.domain.AppUserMiner" useGeneratedKeys="true" keyProperty="id">
+        insert into app_user_miner(user_id, brand_id, api_code, management_fee_rate, total_mined, yesterday_mined, today_mined, total_income, yesterday_income, status)
+        values(#{userId}, #{brandId}, #{apiCode}, #{managementFeeRate}, #{totalMined}, #{yesterdayMined}, #{todayMined}, #{totalIncome}, #{yesterdayIncome}, #{status})
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.system.domain.AppUserMiner">
+        update app_user_miner
+        <set>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="brandId != null">brand_id = #{brandId},</if>
+            <if test="apiCode != null">api_code = #{apiCode},</if>
+            <if test="managementFeeRate != null">management_fee_rate = #{managementFeeRate},</if>
+            <if test="totalMined != null">total_mined = #{totalMined},</if>
+            <if test="yesterdayMined != null">yesterday_mined = #{yesterdayMined},</if>
+            <if test="todayMined != null">today_mined = #{todayMined},</if>
+            <if test="totalIncome != null">total_income = #{totalIncome},</if>
+            <if test="yesterdayIncome != null">yesterday_income = #{yesterdayIncome},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByIds" parameterType="java.lang.Long">
+        delete from app_user_miner where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateStatus">
+        update app_user_miner set status = #{status} where id = #{id}
+    </update>
+
+    <update id="bindUser">
+        update app_user_miner set user_id = #{userId} where id = #{id}
+    </update>
+
+    <update id="unbindUser">
+        update app_user_miner set user_id = NULL where id = #{id}
+    </update>
+
+</mapper>
