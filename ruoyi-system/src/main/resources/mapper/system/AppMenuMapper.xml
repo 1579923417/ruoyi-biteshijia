@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AppMenuMapper">
+    <resultMap type="com.ruoyi.system.domain.AppMenu" id="AppMenuResult">
+        <id property="id" column="id" />
+        <result property="menuType" column="menu_type" />
+        <result property="title" column="title" />
+        <result property="icon" column="icon" />
+        <result property="type" column="type" />
+        <result property="path" column="path" />
+        <result property="sort" column="sort" />
+        <result property="status" column="status" />
+        <result property="parentId" column="parent_id" />
+        <result property="remark" column="remark" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, menu_type, title, icon, type, path, sort, status, parent_id, remark
+    </sql>
+
+    <select id="selectById" parameterType="long" resultMap="AppMenuResult">
+        select <include refid="Base_Column_List"/> from app_menu where id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.ruoyi.system.domain.AppMenu" resultMap="AppMenuResult">
+        select <include refid="Base_Column_List"/> from app_menu
+        <where>
+            <if test="menuType != null"> and menu_type = #{menuType} </if>
+            <if test="title != null and title != ''"> and title like concat('%', #{title}, '%') </if>
+            <if test="type != null"> and type = #{type} </if>
+            <if test="status != null"> and status = #{status} </if>
+            <if test="parentId != null"> and parent_id = #{parentId} </if>
+        </where>
+        order by sort asc, id desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.system.domain.AppMenu">
+        insert into app_menu (menu_type, title, icon, type, path, sort, status, parent_id, remark)
+        values (#{menuType}, #{title}, #{icon}, #{type}, #{path}, #{sort}, #{status}, #{parentId}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.system.domain.AppMenu">
+        update app_menu
+        set menu_type = #{menuType}, title = #{title}, icon = #{icon}, type = #{type}, path = #{path}, sort = #{sort}, status = #{status}, parent_id = #{parentId}, remark = #{remark}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByIds" parameterType="long">
+        delete from app_menu where id in
+        <foreach collection="array" item="id" open="(" close=")" separator=","> #{id} </foreach>
+    </delete>
+
+    <update id="updateStatus">
+        update app_menu set status = #{status} where id = #{id}
+    </update>
+</mapper>
+
