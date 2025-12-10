@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 import com.ruoyi.system.enums.MenuType;
 
+/**
+ * 页面设置--APP菜单管理 前端控制器
+ */
 @RestController
 @RequestMapping("/admin/app/menu")
 @Api(tags = "页面设置--APP菜单管理")
@@ -26,7 +29,7 @@ public class AppMenuController extends BaseController {
     @Autowired
     private IAppMenuService appMenuService;
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:list')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:list')")
     @GetMapping("/list")
     public TableDataInfo list(AppMenu query){
         startPage();
@@ -34,7 +37,7 @@ public class AppMenuController extends BaseController {
         return getDataTable(list);
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:list')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:list')")
     @GetMapping("/roots")
     public TableDataInfo roots(AppMenu query){
         query.setParentId(0L);
@@ -43,41 +46,41 @@ public class AppMenuController extends BaseController {
         return getDataTable(list);
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:query')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:query')")
     @GetMapping("/{id}")
     public AjaxResult get(@PathVariable("id") Long id){
         return AjaxResult.success(appMenuService.selectById(id));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:add')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:add')")
     @Log(title = "APP菜单", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody AppMenu entity){
         return toAjax(appMenuService.insert(entity));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:edit')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:edit')")
     @Log(title = "APP菜单", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody AppMenu entity){
         return toAjax(appMenuService.update(entity));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:remove')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:remove')")
     @Log(title = "APP菜单", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids){
         return toAjax(appMenuService.deleteByIds(ids));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:edit')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:edit')")
     @Log(title = "APP菜单状态", businessType = BusinessType.UPDATE)
     @PutMapping("/changeStatus")
     public AjaxResult changeStatus(@RequestParam("id") Long id, @RequestParam("status") Integer status){
         return toAjax(appMenuService.updateStatus(id, status));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appMenu:list')")
+    @PreAuthorize("@ss.hasPermi('admin:appMenu:list')")
     @GetMapping("/types")
     public AjaxResult types(){
         ArrayList<Map<String, Object>> list = new ArrayList<>();
