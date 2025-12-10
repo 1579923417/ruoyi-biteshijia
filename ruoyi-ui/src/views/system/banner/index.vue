@@ -23,7 +23,7 @@
           <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="handleStatusChange(scope.row)" v-hasPermi="['system:banner:edit']"></el-switch>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-picture" @click="openUpload(scope.row)" v-hasPermi="['system:banner:edit']">更换/上传</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="openEdit(scope.row)" v-hasPermi="['system:banner:edit']">编辑</el-button>
@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import { listBanner, addBanner, updateBanner, delBanner, changeStatus } from '@/api/system/banner'
+import { listBanner, addBanner, updateBanner, delBanner, changeStatus } from '@/api/app/banner'
 import ImageUpload from '@/components/ImageUpload/index.vue'
 
 export default {
