@@ -17,6 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin/f2pool")
 @Api(tags = "f2pool")
+@Anonymous
 public class F2PoolController {
 
     @Autowired

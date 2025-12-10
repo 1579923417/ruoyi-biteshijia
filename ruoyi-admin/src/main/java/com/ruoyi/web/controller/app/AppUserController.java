@@ -28,7 +28,7 @@ public class AppUserController extends BaseController {
     @Autowired
     private IAppUserService appUserService;
 
-    @PreAuthorize("@ss.hasPermi('app:appUser:list')")
+    @PreAuthorize("@ss.hasPermi('admin:appUser:list')")
     @GetMapping("/list")
     public TableDataInfo list(@RequestParam(value = "keyword", required = false) String keyword,
                               @RequestParam(value = "phone", required = false) String phone){
@@ -43,13 +43,13 @@ public class AppUserController extends BaseController {
         return getDataTable(list);
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appUser:query')")
+    @PreAuthorize("@ss.hasPermi('admin:appUser:query')")
     @GetMapping("/{id}")
     public AjaxResult get(@PathVariable("id") Long id){
         return AjaxResult.success(appUserService.selectById(id));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appUser:add')")
+    @PreAuthorize("@ss.hasPermi('admin:appUser:add')")
     @Log(title = "APP用户", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody AppUser entity){
@@ -60,13 +60,13 @@ public class AppUserController extends BaseController {
             return AjaxResult.error("手机号已存在");
         }
         if (StringUtils.isEmpty(entity.getPassword())) {
-            String defaultPwd = IdUtils.fastSimpleUUID().substring(0, 8);
-            entity.setPassword(SecurityUtils.encryptPassword(defaultPwd));
+        // 设置固定默认密码为 "1234567"
+        entity.setPassword(SecurityUtils.encryptPassword("1234567"));
         }
         return toAjax(appUserService.insert(entity));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appUser:edit')")
+    @PreAuthorize("@ss.hasPermi('admin:appUser:edit')")
     @Log(title = "APP用户", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody AppUser entity){
@@ -80,14 +80,14 @@ public class AppUserController extends BaseController {
         return toAjax(appUserService.update(entity));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appUser:remove')")
+    @PreAuthorize("@ss.hasPermi('admin:appUser:remove')")
     @Log(title = "APP用户", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids){
         return toAjax(appUserService.deleteByIds(ids));
     }
 
-    @PreAuthorize("@ss.hasPermi('app:appUser:resetPwd')")
+    @PreAuthorize("@ss.hasPermi('admin:appUser:resetPwd')")
     @Log(title = "APP用户密码重置", businessType = BusinessType.UPDATE)
     @PutMapping("/resetPwd/{id}")
     public AjaxResult resetPwd(@PathVariable Long id){
@@ -95,8 +95,7 @@ public class AppUserController extends BaseController {
         if (user == null) {
             return AjaxResult.error("用户不存在");
         }
-        String defaultPwd = IdUtils.fastSimpleUUID().substring(0, 8);
-        user.setPassword(SecurityUtils.encryptPassword(defaultPwd));
+        user.setPassword(SecurityUtils.encryptPassword("123456"));
         return toAjax(appUserService.update(user));
     }
 }
