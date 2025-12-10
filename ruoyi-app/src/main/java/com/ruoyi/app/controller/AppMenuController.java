@@ -22,7 +22,7 @@ import java.util.List;
 @RequestMapping("/app/menu")
 @Api(tags = "APP--菜单")
 @Anonymous
-public class AppMenuAppController extends BaseController {
+public class AppMenuController extends BaseController {
 
     @Autowired
     private IAppMenuService appMenuService;
