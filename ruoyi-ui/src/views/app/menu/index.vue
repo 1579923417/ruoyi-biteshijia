@@ -44,7 +44,7 @@
       <el-table-column label="名称" align="center" prop="title" />
       <el-table-column label="图标" align="center" width="100">
         <template slot-scope="scope">
-          <el-image v-if="scope.row.icon" :src="scope.row.icon" style="width:36px;height:36px" fit="cover"></el-image>
+          <el-image v-if="scope.row.icon" :src="baseUrl + scope.row.icon" style="width:36px;height:36px" fit="cover"></el-image>
           <span v-else>-</span>
         </template>
       </el-table-column>
@@ -80,18 +80,7 @@
           <el-input v-model="addForm.title" placeholder="请输入名称" />
         </el-form-item>
         <el-form-item label="图标" prop="icon">
-          <el-upload
-            :action="uploadAction"
-            :headers="uploadHeaders"
-            list-type="picture-card"
-            :file-list="addFileList"
-            :on-success="handleAddIconSuccess"
-            :on-error="handleUploadError"
-            :on-preview="handlePreview"
-            :on-remove="handleRemove.bind(null, 'add')"
-          >
-            <i class="el-icon-plus"></i>
-          </el-upload>
+          <image-upload :value="addUploadValue" :limit="1" :action="'/common/upload'" :file-size="5" :file-type="['png','jpg','jpeg']" @input="onAddUploadChange" />
         </el-form-item>
         <el-form-item label="跳转类型" prop="type">
           <el-select v-model="addForm.type" placeholder="请选择">
@@ -136,18 +125,7 @@
           <el-input v-model="editForm.title" />
         </el-form-item>
         <el-form-item label="图标" prop="icon">
-          <el-upload
-            :action="uploadAction"
-            :headers="uploadHeaders"
-            list-type="picture-card"
-            :file-list="editFileList"
-            :on-success="handleEditIconSuccess"
-            :on-error="handleUploadError"
-            :on-preview="handlePreview"
-            :on-remove="handleRemove.bind(null, 'edit')"
-          >
-            <i class="el-icon-plus"></i>
-          </el-upload>
+          <image-upload :value="editUploadValue" :limit="1" :action="'/common/upload'" :file-size="5" :file-type="['png','jpg','jpeg']" @input="onEditUploadChange" />
         </el-form-item>
         <el-form-item label="跳转类型" prop="type">
           <el-select v-model="editForm.type" placeholder="请选择">
@@ -185,12 +163,14 @@
 
 <script>
 import { listAppMenu, getAppMenu, addAppMenu, updateAppMenu, delAppMenu, changeAppMenuStatus, listRootAppMenu, listMenuTypes } from '@/api/app/menu.js'
-import { getToken } from '@/utils/auth'
+import ImageUpload from '@/components/ImageUpload/index.vue'
 
 export default {
   name: 'AppMenuIndex',
+  components: { ImageUpload },
   data() {
     return {
+      baseUrl: process.env.VUE_APP_BASE_API,
       loading: false,
       showSearch: true,
       list: [],
@@ -203,12 +183,8 @@ export default {
       editForm: { id: undefined, menuType: 1, title: '', icon: '', type: 1, path: '', sort: 0, status: 1, parentId: 0, remark: '' },
       rootOptions: [],
       menuTypeOptions: [],
-      addFileList: [],
-      editFileList: [],
-      previewOpen: false,
-      previewUrl: '',
-      uploadAction: process.env.VUE_APP_BASE_API + '/common/upload',
-      uploadHeaders: { Authorization: 'Bearer ' + getToken() },
+      addUploadValue: '',
+      editUploadValue: '',
       rules: {
         menuType: [{ required: true, message: '请选择菜单类型', trigger: 'change' }],
         title: [{ required: true, message: '请输入名称', trigger: 'blur' }],
@@ -229,8 +205,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.queryParams = { pageNum: 1, pageSize: 10, menuType: undefined, title: undefined, type: undefined, status: undefined }; this.getList() },
     handleSelectionChange(selection) { this.ids = selection.map(i => i.id) },
-    openAdd() { this.addForm = { menuType: 1, title: '', icon: '', type: 1, path: '', sort: 0, status: 1, parentId: 0, remark: '' }; this.addFileList = []; this.addOpen = true },
-    openEdit(row) { getAppMenu(row.id).then(res => { this.editForm = Object.assign({}, res.data || {}); this.editFileList = this.editForm.icon ? [{ name: 'icon', url: this.editForm.icon }] : []; this.editOpen = true }) },
+    openAdd() { this.addForm = { menuType: 1, title: '', icon: '', type: 1, path: '', sort: 0, status: 1, parentId: 0, remark: '' }; this.addUploadValue = ''; this.addOpen = true },
+    openEdit(row) { getAppMenu(row.id).then(res => { this.editForm = Object.assign({}, res.data || {}); this.editForm.icon = this.normalizePath(this.editForm.icon || ''); this.editUploadValue = this.editForm.icon || ''; this.editOpen = true }) },
     submitAdd() {
       this.$refs.addFormRef.validate(valid => { if (!valid) return; addAppMenu(this.addForm).then(() => { this.$modal.msgSuccess('新增成功'); this.addOpen = false; this.getList() }) })
     },
@@ -239,17 +215,28 @@ export default {
     },
     handleDelete(row) { const id = row.id || this.ids[0]; if (!id) return; this.$modal.confirm('确认删除该菜单吗？').then(() => delAppMenu(id)).then(() => { this.$modal.msgSuccess('删除成功'); this.getList() }) },
     handleStatusChange(row) { changeAppMenuStatus(row.id, row.status).then(() => { this.$modal.msgSuccess('状态已更新') }).catch(() => { row.status = row.status === 1 ? 0 : 1 }) },
-    handleAddIconSuccess(res, file) {
-      const url = (res && res.url) || (res && res.data && res.data.url) || ''
-      const fileName = (res && res.fileName) || (res && res.data && res.data.fileName) || ''
-      const finalUrl = url || (fileName ? (process.env.VUE_APP_BASE_API + fileName) : '')
-      if (finalUrl) { this.addForm.icon = finalUrl; this.addFileList = [{ name: file.name, url: finalUrl }] }
+    onAddUploadChange(val) {
+      const path = Array.isArray(val) ? (val[0] || '') : (val || '')
+      const norm = this.normalizePath(path)
+      this.addUploadValue = norm
+      this.addForm.icon = norm
     },
-    handleEditIconSuccess(res, file) {
-      const url = (res && res.url) || (res && res.data && res.data.url) || ''
-      const fileName = (res && res.fileName) || (res && res.data && res.data.fileName) || ''
-      const finalUrl = url || (fileName ? (process.env.VUE_APP_BASE_API + fileName) : '')
-      if (finalUrl) { this.editForm.icon = finalUrl; this.editFileList = [{ name: file.name, url: finalUrl }] }
+    onEditUploadChange(val) {
+      const path = Array.isArray(val) ? (val[0] || '') : (val || '')
+      const norm = this.normalizePath(path)
+      this.editUploadValue = norm
+      this.editForm.icon = norm
+    },
+    normalizePath(p) {
+      if (!p) return ''
+      const base = this.baseUrl || ''
+      if (base && p.indexOf(base) === 0) return p.substring(base.length)
+      try {
+        const u = new URL(p)
+        return (u.pathname || '') + (u.search || '')
+      } catch (e) {
+        return p
+      }
     },
     handleUploadError(err) { this.$modal.msgError('图标上传失败：' + (err && err.message ? err.message : '网络或权限问题')) },
     handlePreview(file) { this.previewUrl = file.url || (file.response && file.response.url) || ''; if (this.previewUrl) this.previewOpen = true },
