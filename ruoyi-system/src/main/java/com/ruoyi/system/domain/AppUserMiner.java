@@ -11,6 +11,7 @@ public class AppUserMiner extends BaseEntity implements Serializable {
     private Long id;
     private Long userId;
     private Long brandId;
+    private String brandName;
     private String apiCode;
     private BigDecimal managementFeeRate;
     private BigDecimal totalMined;
@@ -28,6 +29,8 @@ public class AppUserMiner extends BaseEntity implements Serializable {
     public void setUserId(Long userId) { this.userId = userId; }
     public Long getBrandId() { return brandId; }
     public void setBrandId(Long brandId) { this.brandId = brandId; }
+    public String getBrandName() { return brandName; }
+    public void setBrandName(String brandName) { this.brandName = brandName; }
     public String getApiCode() { return apiCode; }
     public void setApiCode(String apiCode) { this.apiCode = apiCode; }
     public BigDecimal getManagementFeeRate() { return managementFeeRate; }

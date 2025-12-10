@@ -8,6 +8,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <id     property="id"                column="id"                />
         <result property="userId"            column="user_id"           />
         <result property="brandId"           column="brand_id"          />
+        <result property="brandName"         column="brand_name"        />
         <result property="apiCode"           column="api_code"          />
         <result property="managementFeeRate" column="management_fee_rate" />
         <result property="totalMined"        column="total_mined"       />
@@ -21,7 +22,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectVo">
-        select id, user_id, brand_id, api_code, management_fee_rate, total_mined, yesterday_mined, today_mined, total_income, yesterday_income, status, create_time, update_time from app_user_miner
+        select aum.id, aum.user_id, aum.brand_id, mb.brand_name as brand_name, aum.api_code, aum.management_fee_rate, aum.total_mined, aum.yesterday_mined, aum.today_mined, aum.total_income, aum.yesterday_income, aum.status, aum.create_time, aum.update_time
+        from app_user_miner aum
+        left join miner_brand mb on aum.brand_id = mb.id
     </sql>
 
     <select id="selectById" parameterType="java.lang.Long" resultMap="AppUserMinerResult">
