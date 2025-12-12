@@ -33,16 +33,32 @@ public class AppMenuServiceImpl implements IAppMenuService {
     public List<AppMenuGroupVo> selectVisibleGrouped() {
         AppMenu query = new AppMenu();
         query.setStatus(1);
-        List<AppMenu> list = appMenuMapper.selectList(query);
-        list.forEach(this::applyDesc);
-        java.util.Map<Integer, List<AppMenu>> grouped = list.stream()
-                .collect(java.util.stream.Collectors.groupingBy(AppMenu::getMenuType, java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
-        return grouped.entrySet().stream().map(e -> {
+        List<AppMenu> all = appMenuMapper.selectList(query);
+        all.forEach(this::applyDesc);
+
+        List<AppMenu> roots = all.stream()
+                .filter(m -> m.getParentId() != null && m.getParentId() == 0L)
+                .sorted(java.util.Comparator.comparing(AppMenu::getSort, java.util.Comparator.nullsLast(Integer::compareTo)))
+                .collect(java.util.stream.Collectors.toList());
+
+        java.util.Map<Long, List<AppMenu>> childrenByRoot = all.stream()
+                .filter(m -> m.getParentId() != null && m.getParentId() != 0L)
+                .collect(java.util.stream.Collectors.groupingBy(AppMenu::getParentId));
+
+        return roots.stream().map(root -> {
+            List<AppMenu> children = childrenByRoot.getOrDefault(root.getId(), java.util.Collections.emptyList())
+                    .stream()
+                    .sorted(java.util.Comparator.comparing(AppMenu::getSort, java.util.Comparator.nullsLast(Integer::compareTo)))
+                    .collect(java.util.stream.Collectors.toList());
+
             AppMenuGroupVo g = new AppMenuGroupVo();
-            g.setMenuType(e.getKey());
-            MenuType mt = MenuType.fromCode(e.getKey());
+            g.setGroupId(root.getId());
+            g.setGroupTitle(root.getTitle());
+            g.setMenuType(root.getMenuType());
+            MenuType mt = MenuType.fromCode(root.getMenuType());
             g.setMenuTypeDesc(mt != null ? mt.getDesc() : null);
-            List<AppMenuVo> items = e.getValue().stream().map(m -> {
+
+            List<AppMenuVo> items = children.stream().map(m -> {
                 AppMenuVo vo = new AppMenuVo();
                 vo.setId(m.getId());
                 vo.setTitle(m.getTitle());
