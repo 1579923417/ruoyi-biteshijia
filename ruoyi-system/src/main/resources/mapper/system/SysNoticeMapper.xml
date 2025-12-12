@@ -41,6 +41,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			</if>
 		</where>
     </select>
+
+    <select id="selectAppVisibleList" resultMap="SysNoticeResult">
+        <include refid="selectNoticeVo"/>
+        where status = '0' and notice_type = '3'
+        order by create_time desc, notice_id desc
+    </select>
     
     <insert id="insertNotice" parameterType="SysNotice">
         insert into sys_notice (

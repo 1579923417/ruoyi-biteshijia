@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.system.domain.SysNotice;
 import com.ruoyi.system.mapper.SysNoticeMapper;
 import com.ruoyi.system.service.ISysNoticeService;
+import com.ruoyi.system.domain.vo.SysNoticeAppVo;
+import com.ruoyi.system.domain.vo.SysNoticeSimpleVo;
+import com.ruoyi.system.enums.NoticeType;
 
 /**
  * 公告 服务层实现
@@ -40,6 +43,58 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     public List<SysNotice> selectNoticeList(SysNotice notice)
     {
         return noticeMapper.selectNoticeList(notice);
+    }
+
+    /**
+     * 查询app公告列表
+     * @return 公告集合
+     */
+    @Override
+    public List<SysNoticeAppVo> selectAppVisibleList()
+    {
+        List<SysNotice> list = noticeMapper.selectAppVisibleList();
+        return list.stream().map(n -> {
+            SysNoticeAppVo vo = new SysNoticeAppVo();
+            vo.setId(n.getNoticeId());
+            vo.setTitle(n.getNoticeTitle());
+            NoticeType t;
+            try { t = NoticeType.fromCode(n.getNoticeType()); } catch (Exception e) { t = null; }
+            vo.setTypeDesc(t != null ? t.getDescription() : n.getNoticeType());
+            vo.setContent(n.getNoticeContent());
+            vo.setCreateTime(n.getCreateTime());
+            return vo;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public List<SysNoticeSimpleVo> selectAppSimpleList()
+    {
+        List<SysNotice> list = noticeMapper.selectAppVisibleList();
+        return list.stream().map(n -> {
+            SysNoticeSimpleVo vo = new SysNoticeSimpleVo();
+            vo.setId(n.getNoticeId());
+            vo.setTitle(n.getNoticeTitle());
+            vo.setCreateTime(n.getCreateTime());
+            return vo;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public SysNoticeAppVo selectAppNoticeDetail(Long id)
+    {
+        SysNotice n = noticeMapper.selectNoticeById(id);
+        if (n == null) {
+            return null;
+        }
+        SysNoticeAppVo vo = new SysNoticeAppVo();
+        vo.setId(n.getNoticeId());
+        vo.setTitle(n.getNoticeTitle());
+        NoticeType t;
+        try { t = NoticeType.fromCode(n.getNoticeType()); } catch (Exception e) { t = null; }
+        vo.setTypeDesc(t != null ? t.getDescription() : n.getNoticeType());
+        vo.setContent(n.getNoticeContent());
+        vo.setCreateTime(n.getCreateTime());
+        return vo;
     }
 
     /**

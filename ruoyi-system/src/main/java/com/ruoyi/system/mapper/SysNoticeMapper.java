@@ -25,6 +25,12 @@ public interface SysNoticeMapper
      * @return 公告集合
      */
     public List<SysNotice> selectNoticeList(SysNotice notice);
+    
+    /**
+     * 查询app公告列表
+     * @return 公告集合
+     */
+    public List<SysNotice> selectAppVisibleList();
 
     /**
      * 新增公告

@@ -2,6 +2,8 @@ package com.ruoyi.system.service;
 
 import java.util.List;
 import com.ruoyi.system.domain.SysNotice;
+import com.ruoyi.system.domain.vo.SysNoticeAppVo;
+import com.ruoyi.system.domain.vo.SysNoticeSimpleVo;
 
 /**
  * 公告 服务层
@@ -25,6 +27,22 @@ public interface ISysNoticeService
      * @return 公告集合
      */
     public List<SysNotice> selectNoticeList(SysNotice notice);
+
+    /**
+     * 查询app公告列表
+     * @return 公告集合
+     */
+    public List<SysNoticeAppVo> selectAppVisibleList();
+
+    /**
+     * APP 简版列表
+     */
+    public List<SysNoticeSimpleVo> selectAppSimpleList();
+
+    /**
+     * APP 通知详情
+     */
+    public SysNoticeAppVo selectAppNoticeDetail(Long id);
 
     /**
      * 新增公告
