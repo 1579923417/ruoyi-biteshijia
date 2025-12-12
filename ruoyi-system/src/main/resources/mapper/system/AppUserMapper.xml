@@ -6,6 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <resultMap type="com.ruoyi.system.domain.AppUser" id="AppUserResult">
         <id     property="id"              column="id"              />
+        <result property="password"        column="password"       />
         <result property="name"            column="name"            />
         <result property="phone"           column="phone"           />
         <result property="bankName"        column="bank_name"       />
@@ -21,13 +22,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select id, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, update_time from app_user
     </sql>
 
+    <sql id="selectVoWithPwd">
+        select id, password, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, update_time from app_user
+    </sql>
+
     <select id="selectById" parameterType="java.lang.Long" resultMap="AppUserResult">
         <include refid="selectVo"/>
         where id = #{id}
     </select>
 
     <select id="selectByPhone" parameterType="java.lang.String" resultMap="AppUserResult">
-        <include refid="selectVo"/>
+        <include refid="selectVoWithPwd"/>
         where phone = #{phone} limit 1
     </select>
 
