@@ -20,7 +20,7 @@
       <el-form-item label="类型" prop="noticeType">
         <el-select v-model="queryParams.noticeType" placeholder="公告类型" clearable>
           <el-option
-            v-for="dict in dict.type.sys_notice_type"
+            v-for="dict in noticeTypeOptions"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -80,7 +80,7 @@
       />
       <el-table-column label="公告类型" align="center" prop="noticeType" width="100">
         <template slot-scope="scope">
-          <dict-tag :options="dict.type.sys_notice_type" :value="scope.row.noticeType"/>
+          <dict-tag :options="noticeTypeOptions" :value="scope.row.noticeType"/>
         </template>
       </el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="100">
@@ -135,7 +135,7 @@
             <el-form-item label="公告类型" prop="noticeType">
               <el-select v-model="form.noticeType" placeholder="请选择公告类型">
                 <el-option
-                  v-for="dict in dict.type.sys_notice_type"
+                  v-for="dict in noticeTypeOptions"
                   :key="dict.value"
                   :label="dict.label"
                   :value="dict.value"
@@ -214,6 +214,15 @@ export default {
           { required: true, message: "公告类型不能为空", trigger: "change" }
         ]
       }
+    }
+  },
+  computed: {
+    noticeTypeOptions() {
+      const opts = (this.dict && this.dict.type && this.dict.type.sys_notice_type) ? this.dict.type.sys_notice_type.slice() : []
+      if (!opts.find(o => String(o.value) === '3')) {
+        opts.push({ value: '3', label: 'APP通知' })
+      }
+      return opts
     }
   },
   created() {

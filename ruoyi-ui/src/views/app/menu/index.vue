@@ -1,11 +1,6 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="90px">
-      <el-form-item label="菜单类型">
-        <el-select v-model="queryParams.menuType" placeholder="全部" clearable style="width: 180px">
-          <el-option v-for="t in menuTypeOptions" :key="t.code" :value="t.code" :label="t.desc" />
-        </el-select>
-      </el-form-item>
       <el-form-item label="名称">
         <el-input v-model="queryParams.title" placeholder="请输入菜单名称" clearable style="width: 220px" @keyup.enter.native="handleQuery" />
       </el-form-item>
@@ -32,15 +27,15 @@
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="openAdd" v-hasPermi="['app:appMenu:add']">新增</el-button>
       </el-col>
+      <el-col :span="2.5">
+        <el-button type="success" plain icon="el-icon-menu" size="mini" @click="toggleGroupView">{{ groupView ? '返回列表' : '按根分组查看' }}</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
+    <el-table v-if="!groupView" v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="ID" align="center" prop="id" width="90" />
-      <el-table-column label="菜单类型" align="center" width="150">
-        <template slot-scope="scope">{{ scope.row.menuTypeDesc || formatTypeByCode(scope.row.menuType) }}</template>
-      </el-table-column>
       <el-table-column label="名称" align="center" prop="title" />
       <el-table-column label="图标" align="center" width="100">
         <template slot-scope="scope">
@@ -51,7 +46,6 @@
       <el-table-column label="跳转类型" align="center" width="120">
         <template slot-scope="scope">{{ formatType(scope.row.type) }}</template>
       </el-table-column>
-      <el-table-column label="路径" align="center" prop="path" :show-overflow-tooltip="true" />
       <el-table-column label="排序" align="center" prop="sort" width="90" />
       <el-table-column label="状态" align="center" prop="status" width="120">
         <template slot-scope="scope">
@@ -67,15 +61,42 @@
       </el-table-column>
     </el-table>
 
-    <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
+    <pagination v-if="!groupView" v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
+
+    <div v-else>
+      <el-alert title="当前为分组视图：父ID为0的根菜单作为分组，展示其子菜单" type="info" show-icon class="mb8" />
+      <el-collapse>
+        <el-collapse-item v-for="g in groupList" :key="g.groupId" :title="g.groupTitle">
+          <div class="mb8">
+            <el-button type="primary" size="mini" icon="el-icon-plus" @click="openAddChild(g)">新增子菜单</el-button>
+            <el-button type="text" size="mini" @click="openEditRoot(g)">编辑根菜单</el-button>
+          </div>
+          <el-table :data="g.items" size="mini">
+            <el-table-column label="ID" align="center" prop="id" width="90" />
+            <el-table-column label="名称" align="center" prop="title" />
+            <el-table-column label="图标" align="center" width="100">
+              <template slot-scope="scope">
+                <el-image v-if="scope.row.icon" :src="baseUrl + scope.row.icon" style="width:28px;height:28px" fit="cover"></el-image>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="跳转类型" align="center" width="120">
+              <template slot-scope="scope">{{ formatType(scope.row.type) }}</template>
+            </el-table-column>
+            <el-table-column label="排序" align="center" prop="sort" width="90" />
+            <el-table-column label="操作" align="center" width="220" class-name="small-padding fixed-width">
+              <template slot-scope="scope">
+                <el-button size="mini" type="text" icon="el-icon-edit" @click="openEdit(scope.row)" v-hasPermi="['app:appMenu:edit']">修改</el-button>
+                <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['app:appMenu:remove']">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-collapse-item>
+      </el-collapse>
+    </div>
 
     <el-dialog title="新增菜单" :visible.sync="addOpen" width="700px" append-to-body>
       <el-form ref="addFormRef" :model="addForm" :rules="rules" label-width="120px">
-        <el-form-item label="菜单类型" prop="menuType">
-          <el-select v-model="addForm.menuType" placeholder="请选择">
-            <el-option v-for="t in menuTypeOptions" :key="t.code" :value="t.code" :label="t.desc" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="名称" prop="title">
           <el-input v-model="addForm.title" placeholder="请输入名称" />
         </el-form-item>
@@ -88,9 +109,6 @@
             <el-option :value="2" label="外链" />
             <el-option :value="3" label="功能按钮" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="路径" prop="path">
-          <el-input v-model="addForm.path" placeholder="请输入路径或链接" />
         </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="addForm.sort" :min="0" />
@@ -116,11 +134,6 @@
 
     <el-dialog title="编辑菜单" :visible.sync="editOpen" width="700px" append-to-body>
       <el-form ref="editFormRef" :model="editForm" :rules="rules" label-width="120px">
-        <el-form-item label="菜单类型" prop="menuType">
-          <el-select v-model="editForm.menuType" placeholder="请选择">
-            <el-option v-for="t in menuTypeOptions" :key="t.code" :value="t.code" :label="t.desc" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="名称" prop="title">
           <el-input v-model="editForm.title" />
         </el-form-item>
@@ -133,9 +146,6 @@
             <el-option :value="2" label="外链" />
             <el-option :value="3" label="功能按钮" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="路径" prop="path">
-          <el-input v-model="editForm.path" />
         </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="editForm.sort" :min="0" />
@@ -173,6 +183,8 @@ export default {
       baseUrl: process.env.VUE_APP_BASE_API,
       loading: false,
       showSearch: true,
+      groupView: false,
+      groupList: [],
       list: [],
       total: 0,
       ids: [],
@@ -194,6 +206,23 @@ export default {
   },
   created() { this.getList(); this.fetchRootOptions(); this.fetchMenuTypes() },
   methods: {
+    toggleGroupView() { this.groupView = !this.groupView; if (this.groupView) { this.getGroupList() } },
+    getGroupList() {
+      this.loading = true
+      listRootAppMenu({ pageNum: 1, pageSize: 100, status: 1 }).then(res => {
+        const roots = (res.rows || []).sort((a,b) => (a.sort||0) - (b.sort||0))
+        const tasks = roots.map(r => listAppMenu({ parentId: r.id, pageNum: 1, pageSize: 100, status: 1 }))
+        return Promise.all(tasks).then(childrenLists => {
+          this.groupList = roots.map((r, idx) => ({
+            groupId: r.id,
+            groupTitle: r.title,
+            menuType: r.menuType,
+            items: (childrenLists[idx].rows || []).sort((a,b) => (a.sort||0) - (b.sort||0))
+          }))
+          this.loading = false
+        })
+      }).catch(() => { this.loading = false })
+    },
     fetchRootOptions() { listRootAppMenu({ pageNum: 1, pageSize: 100 }).then(res => { this.rootOptions = res.rows || [] }) },
     fetchMenuTypes() { listMenuTypes().then(res => { this.menuTypeOptions = res.data || [] }) },
     formatTypeByCode(v) { const t = this.menuTypeOptions.find(i => i.code === v); return t ? t.desc : v },
@@ -206,12 +235,14 @@ export default {
     resetQuery() { this.queryParams = { pageNum: 1, pageSize: 10, menuType: undefined, title: undefined, type: undefined, status: undefined }; this.getList() },
     handleSelectionChange(selection) { this.ids = selection.map(i => i.id) },
     openAdd() { this.addForm = { menuType: 1, title: '', icon: '', type: 1, path: '', sort: 0, status: 1, parentId: 0, remark: '' }; this.addUploadValue = ''; this.addOpen = true },
+    openAddChild(g) { this.addForm = { menuType: g.menuType || 1, title: '', icon: '', type: 1, path: '', sort: 0, status: 1, parentId: g.groupId, remark: '' }; this.addUploadValue = ''; this.addOpen = true },
+    openEditRoot(g) { getAppMenu(g.groupId).then(res => { this.editForm = Object.assign({}, res.data || {}); this.editForm.icon = this.normalizePath(this.editForm.icon || ''); this.editUploadValue = this.editForm.icon || ''; this.editOpen = true }) },
     openEdit(row) { getAppMenu(row.id).then(res => { this.editForm = Object.assign({}, res.data || {}); this.editForm.icon = this.normalizePath(this.editForm.icon || ''); this.editUploadValue = this.editForm.icon || ''; this.editOpen = true }) },
     submitAdd() {
-      this.$refs.addFormRef.validate(valid => { if (!valid) return; addAppMenu(this.addForm).then(() => { this.$modal.msgSuccess('新增成功'); this.addOpen = false; this.getList() }) })
+      this.$refs.addFormRef.validate(valid => { if (!valid) return; addAppMenu(this.addForm).then(() => { this.$modal.msgSuccess('新增成功'); this.addOpen = false; this.getList(); if (this.groupView) this.getGroupList() }) })
     },
     submitEdit() {
-      this.$refs.editFormRef.validate(valid => { if (!valid) return; updateAppMenu(this.editForm).then(() => { this.$modal.msgSuccess('保存成功'); this.editOpen = false; this.getList() }) })
+      this.$refs.editFormRef.validate(valid => { if (!valid) return; updateAppMenu(this.editForm).then(() => { this.$modal.msgSuccess('保存成功'); this.editOpen = false; this.getList(); if (this.groupView) this.getGroupList() }) })
     },
     handleDelete(row) { const id = row.id || this.ids[0]; if (!id) return; this.$modal.confirm('确认删除该菜单吗？').then(() => delAppMenu(id)).then(() => { this.$modal.msgSuccess('删除成功'); this.getList() }) },
     handleStatusChange(row) { changeAppMenuStatus(row.id, row.status).then(() => { this.$modal.msgSuccess('状态已更新') }).catch(() => { row.status = row.status === 1 ? 0 : 1 }) },
