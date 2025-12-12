@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GlobalPowerInfoMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GlobalPowerInfo" id="GlobalPowerInfoResult">
+        <id     property="id"              column="id"              />
+        <result property="name"            column="name"            />
+        <result property="country"         column="country"         />
+        <result property="powerPriceCny"   column="power_price_cny" />
+        <result property="supplyPeriod"    column="supply_period"   />
+        <result property="status"          column="status"          />
+        <result property="createTime"      column="create_time"     />
+        <result property="updateTime"      column="update_time"     />
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, name, country, power_price_cny, supply_period, status, create_time, update_time
+        from global_power_info
+    </sql>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="GlobalPowerInfoResult">
+        <include refid="selectVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectList" parameterType="com.ruoyi.system.domain.GlobalPowerInfo" resultMap="GlobalPowerInfoResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="name != null and name != ''">and name like concat('%', #{name}, '%')</if>
+            <if test="country != null and country != ''">and country like concat('%', #{country}, '%')</if>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.system.domain.GlobalPowerInfo" useGeneratedKeys="true" keyProperty="id">
+        insert into global_power_info(name, country, power_price_cny, supply_period, status)
+        values(#{name}, #{country}, #{powerPriceCny}, #{supplyPeriod}, #{status})
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.system.domain.GlobalPowerInfo">
+        update global_power_info
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="country != null">country = #{country},</if>
+            <if test="powerPriceCny != null">power_price_cny = #{powerPriceCny},</if>
+            <if test="supplyPeriod != null">supply_period = #{supplyPeriod},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByIds" parameterType="java.lang.Long">
+        delete from global_power_info where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
