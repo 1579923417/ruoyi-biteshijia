@@ -1,21 +1,16 @@
 package com.ruoyi.app.controller;
 
 import com.ruoyi.common.annotation.Anonymous;
-import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.core.domain.entity.SysUser;
-import com.ruoyi.common.core.domain.model.LoginUser;
-import com.ruoyi.common.core.redis.RedisCache;
-import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.framework.web.service.TokenService;
+import com.ruoyi.app.service.AppAuthService;
 import com.ruoyi.system.domain.AppUser;
+import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.service.IAppUserService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.TimeUnit;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * APP--用户中心 前端控制器
@@ -28,108 +23,159 @@ import java.util.concurrent.TimeUnit;
 public class AppUserController {
     @Autowired
     private IAppUserService appUserService;
-
+    
     @Autowired
-    private TokenService tokenService;
+    private AppAuthService appAuthService;
 
-    @Autowired
-    private RedisCache redisCache;
-
-    private static final String APP_SMS_CODE_KEY = "app:sms_code:";
-
-    public static class SmsSendBody {
-        private String phone;
-        public String getPhone() { return phone; }
-        public void setPhone(String phone) { this.phone = phone; }
-    }
-
-    public static class SmsLoginBody {
-        private String phone;
-        private String code;
-        public String getPhone() { return phone; }
-        public void setPhone(String phone) { this.phone = phone; }
-        public String getCode() { return code; }
-        public void setCode(String code) { this.code = code; }
-    }
-
-    public static class PwdLoginBody {
-        private String phone;
-        private String password;
-        public String getPhone() { return phone; }
-        public void setPhone(String phone) { this.phone = phone; }
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+    /**
+     * APP 用户登录接口
+     * 支持手机号+密码登录
+     * 登录成功返回 token 和有效期
+     *
+     * @return 返回 token 信息或错误信息
+     */
+    @Anonymous
+    @PostMapping("/login")
+    @ApiOperation("app用户登录")
+    public AjaxResult login(@RequestParam("phone") String phone,
+                            @RequestParam("password") String password) {
+        AppLoginResultVo vo = appAuthService.login(phone, password);
+        return AjaxResult.success(vo);
     }
 
     @Anonymous
-    @PostMapping("/sms/send")
-    public AjaxResult sendLoginSms(@RequestBody SmsSendBody body) {
-        if (body == null || StringUtils.isEmpty(body.getPhone())) {
-            return AjaxResult.error("手机号不能为空");
-        }
-        AppUser user = appUserService.selectByPhone(body.getPhone());
-        if (user == null) {
-            return AjaxResult.error("用户不存在");
-        }
-        String code = String.valueOf((int) ((Math.random() * 9 + 1) * 100000));
-        redisCache.setCacheObject(APP_SMS_CODE_KEY + body.getPhone(), code, 5, TimeUnit.MINUTES);
-        return AjaxResult.success("验证码已发送");
+    @PostMapping("/sendCode")
+    @ApiOperation("app发送登录验证码")
+    public AjaxResult sendCode(@RequestParam("phone") String phone) {
+        appAuthService.sendLoginCode(phone);
+        return AjaxResult.success();
     }
 
     @Anonymous
-    @PostMapping("/login/sms")
-    public AjaxResult loginBySms(@RequestBody SmsLoginBody body) {
-        if (body == null || StringUtils.isEmpty(body.getPhone()) || StringUtils.isEmpty(body.getCode())) {
-            return AjaxResult.error("手机号与验证码不能为空");
-        }
-        AppUser user = appUserService.selectByPhone(body.getPhone());
-        if (user == null) {
-            return AjaxResult.error("用户不存在");
-        }
-        String cacheCode = redisCache.getCacheObject(APP_SMS_CODE_KEY + body.getPhone());
-        if (StringUtils.isEmpty(cacheCode)) {
-            return AjaxResult.error("验证码已过期或未发送");
-        }
-        if (!cacheCode.equals(body.getCode())) {
-            return AjaxResult.error("验证码错误");
-        }
-        redisCache.deleteObject(APP_SMS_CODE_KEY + body.getPhone());
-        return buildTokenResult(user);
+    @PostMapping("/loginByCode")
+    @ApiOperation("app验证码登录")
+    public AjaxResult loginByCode(@RequestParam("phone") String phone,
+                                  @RequestParam("code") String code) {
+        AppLoginResultVo vo = appAuthService.loginByCode(phone, code);
+        return AjaxResult.success(vo);
     }
 
+    /**
+     * APP 用户注册
+     * 传入手机号与密码，完成账号创建
+     */
     @Anonymous
-    @PostMapping("/login/password")
-    public AjaxResult loginByPassword(@RequestBody PwdLoginBody body) {
-        if (body == null || StringUtils.isEmpty(body.getPhone()) || StringUtils.isEmpty(body.getPassword())) {
-            return AjaxResult.error("手机号与密码不能为空");
-        }
-        AppUser user = appUserService.selectByPhone(body.getPhone());
-        if (user == null) {
-            return AjaxResult.error("用户不存在");
-        }
-        if (StringUtils.isEmpty(user.getPassword()) || !SecurityUtils.matchesPassword(body.getPassword(), user.getPassword())) {
-            return AjaxResult.error("密码错误");
-        }
-        return buildTokenResult(user);
+    @PostMapping("/register")
+    @ApiOperation("app用户注册")
+    public AjaxResult register(@RequestParam("phone") String phone,
+                               @RequestParam("password") String password){
+        int rows = appUserService.register(phone, password);
+        return rows > 0 ? AjaxResult.success() : AjaxResult.error("注册失败");
     }
 
+    /**
+     * 获取当前登录用户信息
+     *
+     * @param request 请求对象，从请求头 Authorization 获取 token
+     * @return AjaxResult 当前登录用户信息
+     */
     @GetMapping("/profile")
-    public AjaxResult profile() {
-        String phone = SecurityUtils.getUsername();
-        AppUser user = appUserService.selectByPhone(phone);
-        return AjaxResult.success(user);
+    @ApiOperation("app当前用户信息")
+    public AjaxResult profile(HttpServletRequest request) {
+        AppUser user = appAuthService.getCurrentAppUser(request);
+        if (user == null) {
+            return AjaxResult.error("未登录或已过期");
+        }
+        AppUserProfileVo vo = appUserService.selectProfileByUserId(user.getId());
+        return AjaxResult.success(vo);
     }
 
-    private AjaxResult buildTokenResult(AppUser appUser) {
-        SysUser sysUser = new SysUser();
-        sysUser.setUserId(appUser.getId());
-        sysUser.setUserName(appUser.getPhone());
-        sysUser.setPassword(appUser.getPassword());
-        LoginUser loginUser = new LoginUser(sysUser, null);
-        loginUser.setUserId(appUser.getId());
-        String token = tokenService.createToken(loginUser);
-        AjaxResult ajax = AjaxResult.success();
-        ajax.put(Constants.TOKEN, token);
-        return ajax;
+    /**
+     * 修改个人中心资料
+     * 可修改：用户名称、手机号码、开户行、账户号码
+     * 
+     * @param request 请求对象，从请求头 Authorization 获取 token
+     */
+    @PutMapping("/profile")
+    @ApiOperation("app修改个人资料")
+    public AjaxResult updateProfile(HttpServletRequest request,
+                                    @RequestBody AppUser body) {
+        AppUser user = appAuthService.getCurrentAppUser(request);
+        if (user == null) {
+            return AjaxResult.error("未登录或已过期");
+        }
+        int rows = appUserService.updateProfile(user.getId(), body.getName(), body.getPhone(), body.getBankName(), body.getBankAccount());
+        return rows > 0 ? AjaxResult.success() : AjaxResult.error("修改失败");
+    }
+
+    /**
+     * 获取用户收益明细
+     * 包括累计收益、昨日收益、今日预计收益、今日已挖等摘要信息
+     * 同时返回收益列表（昨日结算项：结算时间、数量、金额）
+     *
+     * @param request 请求对象，从请求头 Authorization 获取 token
+     * @return AjaxResult 收益摘要与收益列表
+     */
+    @GetMapping("/earnings")
+    @ApiOperation("app收益信息")
+    public AjaxResult earnings(HttpServletRequest request) {
+        AppUser user = appAuthService.getCurrentAppUser(request);
+        if (user == null) {
+            return AjaxResult.error("未登录或已过期");
+        }
+        AppUserEarningsVo vo = appUserService.selectEarningsByUserId(user.getId());
+        return AjaxResult.success(vo);
+    }
+
+    /**
+     *
+     * @param request
+     * @param id
+     * @return
+     */
+    @GetMapping("/earningDetail/{id}")
+    @ApiOperation("app收益详情")
+    public AjaxResult earningDetail(HttpServletRequest request,
+                                    @PathVariable("id") Long id) {
+        AppUser user = appAuthService.getCurrentAppUser(request);
+        if (user == null) {
+            return AjaxResult.error("未登录或已过期");
+        }
+        AppUserEarningItemDetailVo vo = appUserService.selectEarningDetail(user.getId(), id);
+        return AjaxResult.success(vo);
+    }
+
+    /**
+     * 获取当前用户的矿机列表
+     * 1. 从请求中获取当前登录用户信息。
+     * 2. 如果用户未登录或登录信息已过期，则返回错误信息。
+     * 3. 如果用户已登录，则查询该用户的矿机列表并返回。
+     *
+     * @param request 请求对象，从请求头 Authorization 获取 token
+     * @return AjaxResult 当前用户的矿机列表
+     */
+    @GetMapping("/miners")
+    @ApiOperation("app我的矿机列表")
+    public AjaxResult miners(HttpServletRequest request){
+        AppUser user = appAuthService.getCurrentAppUser(request);
+        if (user == null) {
+            return AjaxResult.error("未登录或已过期");
+        }
+        AppUserMinerListVo vo = appUserService.selectMyMiners(user.getId());
+        return AjaxResult.success(vo);
+    }
+
+    /**
+     * APP 退出登录
+     */
+    @PostMapping("/logout")
+    @ApiOperation("app退出登录")
+    public AjaxResult logout(HttpServletRequest request) {
+        AppUser user = appAuthService.getCurrentAppUser(request);
+        if (user == null) {
+            return AjaxResult.error("未登录或已过期");
+        }
+        appAuthService.logout(request);
+        return AjaxResult.success("退出成功");
     }
 }

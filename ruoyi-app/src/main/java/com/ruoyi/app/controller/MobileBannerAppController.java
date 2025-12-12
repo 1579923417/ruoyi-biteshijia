@@ -26,6 +26,12 @@ public class MobileBannerAppController {
     @Autowired
     private IMobileBannerService mobileBannerService;
 
+    /**
+     * 获取 APP 首页轮播图列表
+     * 返回可见轮播图信息，用于首页轮播展示
+     *
+     * @return AjaxResult 返回轮播图列表
+     */
     @GetMapping("/list")
     @ApiOperation(value = "app首页轮播列表")
     public AjaxResult list() {
