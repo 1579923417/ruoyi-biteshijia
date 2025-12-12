@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.WebsiteConfigMapper">
+
+    <resultMap type="WebsiteConfig" id="WebsiteConfigResult">
+        <id     property="id"            column="id"            />
+        <result property="configKey"     column="config_key"    />
+        <result property="configValue"   column="config_value"  />
+        <result property="configType"    column="config_type"   />
+        <result property="configGroup"   column="config_group"  />
+        <result property="description"   column="description"   />
+        <result property="updateTime"    column="update_time"   />
+        <result property="createTime"    column="create_time"   />
+    </resultMap>
+
+    <sql id="selectVo">
+        select id, config_key, config_value, config_type, config_group, description, update_time, create_time
+        from websiteconfig
+    </sql>
+
+    <select id="selectById" parameterType="Long" resultMap="WebsiteConfigResult">
+        <include refid="selectVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectByKey" parameterType="String" resultMap="WebsiteConfigResult">
+        <include refid="selectVo"/>
+        where config_key = #{configKey} limit 1
+    </select>
+
+    <select id="selectList" parameterType="WebsiteConfig" resultMap="WebsiteConfigResult">
+        <include refid="selectVo"/>
+        <where>
+            <if test="configKey != null and configKey != ''">
+                and config_key like concat('%', #{configKey}, '%')
+            </if>
+            <if test="configGroup != null and configGroup != ''">
+                and config_group = #{configGroup}
+            </if>
+            <if test="configType != null and configType != ''">
+                and config_type = #{configType}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert" parameterType="WebsiteConfig" useGeneratedKeys="true" keyProperty="id">
+        insert into websiteconfig (
+            <if test="configKey != null and configKey != ''">config_key,</if>
+            <if test="configValue != null and configValue != ''">config_value,</if>
+            <if test="configType != null and configType != ''">config_type,</if>
+            <if test="configGroup != null and configGroup != ''">config_group,</if>
+            <if test="description != null and description != ''">description,</if>
+            create_time
+        ) values (
+            <if test="configKey != null and configKey != ''">#{configKey},</if>
+            <if test="configValue != null and configValue != ''">#{configValue},</if>
+            <if test="configType != null and configType != ''">#{configType},</if>
+            <if test="configGroup != null and configGroup != ''">#{configGroup},</if>
+            <if test="description != null and description != ''">#{description},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="update" parameterType="WebsiteConfig">
+        update websiteconfig
+        <set>
+            <if test="configKey != null and configKey != ''">config_key = #{configKey},</if>
+            <if test="configValue != null and configValue != ''">config_value = #{configValue},</if>
+            <if test="configType != null and configType != ''">config_type = #{configType},</if>
+            <if test="configGroup != null and configGroup != ''">config_group = #{configGroup},</if>
+            <if test="description != null">description = #{description},</if>
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteByIds" parameterType="Long">
+        delete from websiteconfig where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
+
