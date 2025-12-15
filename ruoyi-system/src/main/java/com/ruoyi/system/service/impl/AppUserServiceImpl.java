@@ -76,6 +76,7 @@ public class AppUserServiceImpl implements IAppUserService {
         vo.setPhone(u.getPhone());
         vo.setBankName(u.getBankName());
         vo.setBankAccount(u.getBankAccount());
+        vo.setAvatar(u.getAvatar());
         vo.setMinerCount(u.getMinerCount());
         vo.setTotalIncome(u.getTotalIncome());
         vo.setYesterdayIncome(u.getYesterdayIncome());
@@ -215,11 +216,11 @@ public class AppUserServiceImpl implements IAppUserService {
     /**
      * 更新个人中心资料：名称、手机号、开户行、账户号码
      */
-    public int updateProfile(Long userId, String name, String phone, String bankName, String bankAccount){
+    public int updateProfile(Long userId, String name, String phone, String bankName, String bankAccount, String avatar){
         if (userId == null){
             throw new IllegalArgumentException("缺少ID");
         }
-        if (StringUtils.isEmpty(name) && StringUtils.isEmpty(phone) && StringUtils.isEmpty(bankName) && StringUtils.isEmpty(bankAccount)) {
+        if (StringUtils.isEmpty(name) && StringUtils.isEmpty(phone) && StringUtils.isEmpty(bankName) && StringUtils.isEmpty(bankAccount) && StringUtils.isEmpty(avatar)) {
             throw new IllegalArgumentException("未提交任何修改内容");
         }
         if (StringUtils.isNotEmpty(phone)){
@@ -234,6 +235,7 @@ public class AppUserServiceImpl implements IAppUserService {
         entity.setPhone(phone);
         entity.setBankName(bankName);
         entity.setBankAccount(bankAccount);
+        entity.setAvatar(avatar);
         return mapper.update(entity);
     }
 }

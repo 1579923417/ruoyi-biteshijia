@@ -8,6 +8,7 @@ public class AppUserProfileVo {
     private Long id;
     private String name;
     private String phone;
+    private String avatar;
     private String bankName;
     private String bankAccount;
     private Integer minerCount;
@@ -15,6 +16,12 @@ public class AppUserProfileVo {
     private BigDecimal yesterdayIncome;
     private BigDecimal todayIncome;
 
+    public String getAvatar() {
+        return avatar;
+    }
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }

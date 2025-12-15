@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 /**
  * APP--用户中心 前端控制器
@@ -37,8 +38,9 @@ public class AppUserController {
     @Anonymous
     @PostMapping("/login")
     @ApiOperation("app用户登录")
-    public AjaxResult login(@RequestParam("phone") String phone,
-                            @RequestParam("password") String password) {
+    public AjaxResult login(@RequestBody Map<String, String> body) {
+        String phone = body == null ? null : body.get("phone");
+        String password = body == null ? null : body.get("password");
         AppLoginResultVo vo = appAuthService.login(phone, password);
         return AjaxResult.success(vo);
     }
@@ -104,7 +106,7 @@ public class AppUserController {
         if (user == null) {
             return AjaxResult.error("未登录或已过期");
         }
-        int rows = appUserService.updateProfile(user.getId(), body.getName(), body.getPhone(), body.getBankName(), body.getBankAccount());
+        int rows = appUserService.updateProfile(user.getId(), body.getName(), body.getPhone(), body.getBankName(), body.getBankAccount(), body.getAvatar());
         return rows > 0 ? AjaxResult.success() : AjaxResult.error("修改失败");
     }
 

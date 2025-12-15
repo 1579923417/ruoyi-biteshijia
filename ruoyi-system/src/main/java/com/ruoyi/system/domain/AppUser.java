@@ -19,7 +19,14 @@ public class AppUser extends BaseEntity implements Serializable {
     private BigDecimal todayIncome;
     private Date updateTime;
     private String password;
+    private String avatar;
 
+    public String getAvatar() {
+        return avatar;
+    }
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }

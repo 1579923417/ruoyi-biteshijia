@@ -23,6 +23,12 @@
     <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="名称" align="center" prop="name" />
+      <el-table-column label="头像" align="center" width="160">
+        <template slot-scope="scope">
+          <el-image v-if="scope.row.avatar" :src="baseUrl + scope.row.avatar" :preview-src-list="[baseUrl + scope.row.avatar]" style="width:50px;height:50px;" fit="cover" />
+          <span v-else style="color:#999">无头像</span>
+        </template>
+      </el-table-column>
       <el-table-column label="手机号" align="center" prop="phone" width="140" />
       <el-table-column label="开户行" align="center" prop="bankName" :show-overflow-tooltip="true" />
       <el-table-column label="账户号码" align="center" prop="bankAccount" :show-overflow-tooltip="true" />
@@ -42,13 +48,16 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加用户 -->
-    <el-dialog title="添加用户" :visible.sync="addOpen" width="600px" append-to-body>
+      <el-dialog title="添加用户" :visible.sync="addOpen" width="600px" append-to-body>
       <el-form ref="addFormRef" :model="addForm" :rules="addRules" label-width="100px">
         <el-form-item label="用户名称" prop="name">
           <el-input v-model="addForm.name" placeholder="请输入用户名称" maxlength="30" />
         </el-form-item>
         <el-form-item label="用户手机号" prop="phone">
           <el-input v-model="addForm.phone" placeholder="请输入用户手机号" maxlength="11" />
+        </el-form-item>
+        <el-form-item label="用户头像" prop="avatar">
+          <image-upload :value="addForm.avatar" :limit="1" :action="'/common/upload'" :file-size="5" :file-type="['png','jpg','jpeg']" @input="onAddAvatarChange" />
         </el-form-item>
         <el-form-item label="开户行" prop="bankName">
           <el-input v-model="addForm.bankName" placeholder="请输入开户行" maxlength="50" />
@@ -71,6 +80,14 @@
             <el-col :span="12">
               <el-card shadow="never">
                 <div slot="header">基础信息</div>
+                <div class="field-row">
+                  <span class="label">用户头像</span>
+                  <el-avatar v-if="!editState.avatar" :size="36" :src="fullImageUrl(detail.avatar)" icon="el-icon-user" />
+                  <image-upload v-else :value="detailEdit.avatar" :limit="1" :action="'/common/upload'" :file-size="5" :file-type="['png','jpg','jpeg']" @input="onDetailAvatarChange" />
+                  <i class="el-icon-edit" v-if="!editState.avatar" @click="toggleEdit('avatar')"></i>
+                  <i class="el-icon-check" v-if="editState.avatar" @click="confirmEdit('avatar')"></i>
+                  <i class="el-icon-close" v-if="editState.avatar" @click="cancelEdit('avatar')"></i>
+                </div>
                 <div class="field-row">
                   <span class="label">用户名称</span>
                   <span v-if="!editState.name">{{ detail.name }}</span>
@@ -174,11 +191,14 @@
 <script>
 import { listAppUser, addAppUser, updateAppUser, delAppUser, resetAppUserPwd, getAppUser, listUserMiner, updateUserMiner, unbindMiner, addUserMiner } from '@/api/app/user.js'
 import { listBrand } from '@/api/miner/brand.js'
+import ImageUpload from '@/components/ImageUpload/index.vue'
 
 export default {
   name: 'AppUser',
+  components: { ImageUpload },
   data() {
     return {
+      baseUrl: process.env.VUE_APP_BASE_API,
       loading: false,
       userList: [],
       total: 0,
@@ -186,7 +206,7 @@ export default {
       ids: [],
       queryParams: { pageNum: 1, pageSize: 10, keyword: undefined, phone: undefined },
       addOpen: false,
-      addForm: { name: '', phone: '', bankName: '', bankAccount: '' },
+      addForm: { name: '', phone: '', avatar: '', bankName: '', bankAccount: '' },
       addRules: {
         name: [{ required: true, message: '请输入用户名称', trigger: 'blur' }],
         phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }],
@@ -197,7 +217,7 @@ export default {
       detail: {},
       detailEdit: {},
       detailActiveTab: 'user',
-      editState: { name: false, phone: false, bankName: false, bankAccount: false },
+      editState: { avatar: false, name: false, phone: false, bankName: false, bankAccount: false },
       minerLoading: false,
       minerList: [],
       addMinerOpen: false,
@@ -214,6 +234,7 @@ export default {
     this.getList()
   },
   methods: {
+    fullImageUrl(url) { if (!url) return ''; if (/^https?:\/\//.test(url)) return url; return this.baseUrl + url },
     getList() {
       this.loading = true
       listAppUser(this.queryParams).then(res => {
@@ -229,9 +250,10 @@ export default {
     submitAdd() {
       this.$refs.addFormRef.validate(valid => {
         if (!valid) return
-        addAppUser(this.addForm).then(() => { this.$modal.msgSuccess('新增成功'); this.$refs.addFormRef.resetFields(); this.addForm = { name: '', phone: '', bankName: '', bankAccount: '' }; this.addOpen = false; this.getList() })
+        addAppUser(this.addForm).then(() => { this.$modal.msgSuccess('新增成功'); this.$refs.addFormRef.resetFields(); this.addForm = { name: '', phone: '', avatar: '', bankName: '', bankAccount: '' }; this.addOpen = false; this.getList() })
       })
     },
+    onAddAvatarChange(val) { this.addForm.avatar = Array.isArray(val) ? (val[0] || '') : val },
     handleDelete(row) {
       const id = row.id || this.ids[0]
       if (!id) return
@@ -245,7 +267,7 @@ export default {
     openDetail(row) {
       getAppUser(row.id).then(res => {
         this.detail = res.data || {}
-        this.detailEdit = { name: this.detail.name, phone: this.detail.phone, bankName: this.detail.bankName, bankAccount: this.detail.bankAccount, id: this.detail.id }
+        this.detailEdit = { avatar: this.detail.avatar, name: this.detail.name, phone: this.detail.phone, bankName: this.detail.bankName, bankAccount: this.detail.bankAccount, id: this.detail.id }
         this.detailActiveTab = 'user'
         this.detailOpen = true
         this.fetchMinerList(this.detail.id)
@@ -262,6 +284,7 @@ export default {
         this.$modal.msgSuccess('保存成功')
       })
     },
+    onDetailAvatarChange(val) { this.detailEdit.avatar = Array.isArray(val) ? (val[0] || '') : val },
     fetchMinerList(userId) {
       this.minerLoading = true
       listUserMiner({ userId, pageNum: 1, pageSize: 100 }).then(res => {

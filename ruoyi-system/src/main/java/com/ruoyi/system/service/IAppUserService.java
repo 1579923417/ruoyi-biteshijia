@@ -2,6 +2,7 @@ package com.ruoyi.system.service;
 
 import java.util.List;
 import com.ruoyi.system.domain.AppUser;
+import com.ruoyi.system.domain.vo.AppUserEarningItemDetailVo;
 import com.ruoyi.system.domain.vo.AppUserProfileVo;
 import com.ruoyi.system.domain.vo.AppUserEarningsVo;
 import com.ruoyi.system.domain.vo.AppUserMinerListVo;
@@ -17,6 +18,6 @@ public interface IAppUserService {
     AppUserEarningsVo selectEarningsByUserId(Long id);
     AppUserMinerListVo selectMyMiners(Long userId);
     int register(String phone, String rawPassword);
-    int updateProfile(Long userId, String name, String phone, String bankName, String bankAccount);
-    com.ruoyi.system.domain.vo.AppUserEarningItemDetailVo selectEarningDetail(Long userId, Long id);
+    int updateProfile(Long userId, String name, String phone, String bankName, String bankAccount, String avatar);
+    AppUserEarningItemDetailVo selectEarningDetail(Long userId, Long id);
 }
