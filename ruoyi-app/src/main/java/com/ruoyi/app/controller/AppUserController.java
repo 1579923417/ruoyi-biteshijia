@@ -6,6 +6,8 @@ import com.ruoyi.app.service.AppAuthService;
 import com.ruoyi.system.domain.AppUser;
 import com.ruoyi.system.domain.vo.*;
 import com.ruoyi.system.service.IAppUserService;
+import com.ruoyi.system.service.IAppF2poolService;
+import com.ruoyi.system.domain.vo.F2poolOverviewVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class AppUserController {
     
     @Autowired
     private AppAuthService appAuthService;
+
+    @Autowired
+    private IAppF2poolService appF2poolService;
 
     /**
      * APP 用户登录接口
@@ -82,13 +87,22 @@ public class AppUserController {
      * @return AjaxResult 当前登录用户信息
      */
     @GetMapping("/profile")
-    @ApiOperation("app当前用户信息")
+    @ApiOperation("app我的页面信息")
     public AjaxResult profile(HttpServletRequest request) {
         AppUser user = appAuthService.getCurrentAppUser(request);
         if (user == null) {
             return AjaxResult.error("未登录或已过期");
         }
         AppUserProfileVo vo = appUserService.selectProfileByUserId(user.getId());
+        F2poolOverviewVo overview = appF2poolService.getOverview(user.getId());
+        if (overview != null) {
+            vo.setYesterdayIncome(overview.getTotalYesterdayIncome());
+            vo.setTodayIncome(overview.getTotalTodayIncome());
+            vo.setTotalIncome(overview.getTotalIncome());
+            if (overview.getMinerCount() != null) {
+                vo.setMinerCount(overview.getMinerCount());
+            }
+        }
         return AjaxResult.success(vo);
     }
 
@@ -125,25 +139,7 @@ public class AppUserController {
         if (user == null) {
             return AjaxResult.error("未登录或已过期");
         }
-        AppUserEarningsVo vo = appUserService.selectEarningsByUserId(user.getId());
-        return AjaxResult.success(vo);
-    }
-
-    /**
-     *
-     * @param request
-     * @param id
-     * @return
-     */
-    @GetMapping("/earningDetail/{id}")
-    @ApiOperation("app收益详情")
-    public AjaxResult earningDetail(HttpServletRequest request,
-                                    @PathVariable("id") Long id) {
-        AppUser user = appAuthService.getCurrentAppUser(request);
-        if (user == null) {
-            return AjaxResult.error("未登录或已过期");
-        }
-        AppUserEarningItemDetailVo vo = appUserService.selectEarningDetail(user.getId(), id);
+        AppUserEarningsAggregateVo vo = appF2poolService.getEarnings(user.getId());
         return AjaxResult.success(vo);
     }
 
@@ -163,7 +159,7 @@ public class AppUserController {
         if (user == null) {
             return AjaxResult.error("未登录或已过期");
         }
-        AppUserMinerListVo vo = appUserService.selectMyMiners(user.getId());
+        F2poolMinersVo vo = appF2poolService.getMiners(user.getId());
         return AjaxResult.success(vo);
     }
 

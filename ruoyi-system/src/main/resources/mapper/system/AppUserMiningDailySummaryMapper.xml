@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.AppUserMiningDailySummaryMapper">
+
+    <!-- 用户矿机每日收益汇总 ResultMap -->
+    <resultMap type="com.ruoyi.system.domain.AppUserMiningDailySummary" id="Result">
+        <id     property="id"              column="id" />
+        <result property="userId"          column="user_id" />
+        <result property="statDate"        column="stat_date" />
+        <result property="income"          column="income" />
+        <result property="h24HashRate"     column="h24_hash_rate" />
+        <result property="amount"          column="amount" />
+        <result property="updateTime"      column="update_time" />
+    </resultMap>
+
+    <!-- 基础查询SQL -->
+    <sql id="selectVo">
+        select id, user_id, stat_date, income, h24_hash_rate, amount, update_time
+        from app_user_mining_daily_summary
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="Result">
+        <include refid="selectVo"/>
+        where id = #{id}
+    </select>
+
+    <!-- 列表查询 -->
+    <select id="selectList" parameterType="com.ruoyi.system.domain.AppUserMiningDailySummary" resultMap="Result">
+        <include refid="selectVo"/>
+        <where>
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="statDate != null">and stat_date = #{statDate}</if>
+        </where>
+        order by stat_date desc, id desc
+    </select>
+
+    <!-- 新增记录 -->
+    <insert id="insert" parameterType="com.ruoyi.system.domain.AppUserMiningDailySummary" useGeneratedKeys="true" keyProperty="id">
+        insert into app_user_mining_daily_summary(user_id, stat_date, income, h24_hash_rate, amount)
+        values(#{userId}, #{statDate}, #{income}, #{h24HashRate}, #{amount})
+    </insert>
+
+    <!-- 更新记录 -->
+    <update id="update" parameterType="com.ruoyi.system.domain.AppUserMiningDailySummary">
+        update app_user_mining_daily_summary
+        <set>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="statDate != null">stat_date = #{statDate},</if>
+            <if test="income != null">income = #{income},</if>
+            <if test="h24HashRate != null">h24_hash_rate = #{h24HashRate},</if>
+            <if test="amount != null">amount = #{amount},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds" parameterType="java.lang.Long">
+        delete from app_user_mining_daily_summary where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -20,6 +20,8 @@ public class AppUser extends BaseEntity implements Serializable {
     private Date updateTime;
     private String password;
     private String avatar;
+    private String f2poolToken;
+    private String f2poolUrl;
 
     public String getAvatar() {
         return avatar;
@@ -49,4 +51,8 @@ public class AppUser extends BaseEntity implements Serializable {
     public void setUpdateTime(Date updateTime) { this.updateTime = updateTime; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+    public String getF2poolToken() { return f2poolToken; }
+    public void setF2poolToken(String f2poolToken) { this.f2poolToken = f2poolToken; }
+    public String getF2poolUrl() { return f2poolUrl; }
+    public void setF2poolUrl(String f2poolUrl) { this.f2poolUrl = f2poolUrl; }
 }

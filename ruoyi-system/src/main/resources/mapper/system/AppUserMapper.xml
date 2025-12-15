@@ -17,14 +17,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="todayIncome"     column="today_income"    />
         <result property="updateTime"      column="update_time"     />
         <result property="avatar"          column="avatar"          />
+        <result property="f2poolToken"     column="f2pool_token"    />
+        <result property="f2poolUrl"       column="f2pool_url"      />
     </resultMap>
 
     <sql id="selectVo">
-        select id, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, update_time, avatar from app_user
+        select id, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, update_time, avatar, f2pool_token, f2pool_url from app_user
     </sql>
 
     <sql id="selectVoWithPwd">
-        select id, password, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, update_time, avatar from app_user
+        select id, password, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, update_time, avatar, f2pool_token, f2pool_url from app_user
     </sql>
 
     <select id="selectById" parameterType="java.lang.Long" resultMap="AppUserResult">
@@ -54,8 +56,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="insert" parameterType="com.ruoyi.system.domain.AppUser" useGeneratedKeys="true" keyProperty="id">
-        insert into app_user(password, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, avatar)
-        values(#{password}, #{name}, #{phone}, #{bankName}, #{bankAccount}, #{minerCount}, #{totalIncome}, #{yesterdayIncome}, #{todayIncome}, #{avatar})
+        insert into app_user(password, name, phone, bank_name, bank_account, miner_count, total_income, yesterday_income, today_income, avatar, f2pool_token, f2pool_url)
+        values(#{password}, #{name}, #{phone}, #{bankName}, #{bankAccount}, #{minerCount}, #{totalIncome}, #{yesterdayIncome}, #{todayIncome}, #{avatar}, #{f2poolToken}, #{f2poolUrl})
     </insert>
 
     <update id="update" parameterType="com.ruoyi.system.domain.AppUser">
@@ -68,6 +70,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="minerCount != null">miner_count = #{minerCount},</if>
             <if test="password != null">password = #{password},</if>
             <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="f2poolToken != null">f2pool_token = #{f2poolToken},</if>
+            <if test="f2poolUrl != null">f2pool_url = #{f2poolUrl},</if>
         </set>
         where id = #{id}
     </update>

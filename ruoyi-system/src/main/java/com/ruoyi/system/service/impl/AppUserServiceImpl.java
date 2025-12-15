@@ -18,12 +18,11 @@ import com.ruoyi.system.domain.vo.AppUserMinerItemVo;
 import com.ruoyi.system.domain.vo.AppUserMinerListVo;
 import com.ruoyi.system.mapper.AppUserMapper;
 import com.ruoyi.system.service.IAppUserMinerService;
-import com.ruoyi.system.service.IAppUserMinerIncomeService;
+import com.ruoyi.system.service.IAppUserMiningDailySummaryService;
 import com.ruoyi.system.service.IAppUserService;
 import com.ruoyi.system.service.IMinerBrandService;
 import com.ruoyi.system.domain.MinerBrand;
-import com.ruoyi.system.domain.AppUserMinerIncome;
-import com.ruoyi.system.domain.vo.AppUserEarningItemDetailVo;
+import com.ruoyi.system.domain.AppUserMiningDailySummary;
 
 import static java.time.ZoneId.systemDefault;
 
@@ -36,7 +35,7 @@ public class AppUserServiceImpl implements IAppUserService {
     @Autowired
     private IMinerBrandService minerBrandService;
     @Autowired
-    private IAppUserMinerIncomeService appUserMinerIncomeService;
+    private IAppUserMiningDailySummaryService appUserMiningDailySummaryService;
 
     public AppUser selectById(Long id){
         return mapper.selectById(id);
@@ -113,18 +112,18 @@ public class AppUserServiceImpl implements IAppUserService {
                 .map(m -> m.getYesterdayIncome() == null ? zero : m.getYesterdayIncome())
                 .reduce(zero, BigDecimal::add);
 
-        // 从数据库查询收益列表：结算时间、数量、金额
-        AppUserMinerIncome incomeQuery = new AppUserMinerIncome();
-        incomeQuery.setUserId(id);
-        List<AppUserMinerIncome> incomes = appUserMinerIncomeService.selectList(incomeQuery);
+        // 从每日汇总表查询昨日收益项：统计日期、昨日收益、累计收益
+        AppUserMiningDailySummary dailyQuery = new AppUserMiningDailySummary();
+        dailyQuery.setUserId(id);
+        List<AppUserMiningDailySummary> incomes = appUserMiningDailySummaryService.selectList(dailyQuery);
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         java.util.List<AppUserEarningsDetailVo> details = incomes.stream().map(income -> {
             AppUserEarningsDetailVo d = new AppUserEarningsDetailVo();
             d.setId(income.getId());
-            java.time.LocalDate settleDate = income.getDate().toInstant().atZone(systemDefault()).toLocalDate();
+            java.time.LocalDate settleDate = income.getStatDate().toInstant().atZone(systemDefault()).toLocalDate();
             d.setSettleTime(settleDate.atTime(8, 0).format(dtf));
-            d.setQuantity(income.getMinedAmount());
-            d.setAmount(income.getIncomeRmb());
+            d.setQuantity(null);
+            d.setAmount(income.getIncome());
             return d;
         }).collect(Collectors.toList());
 
@@ -134,29 +133,6 @@ public class AppUserServiceImpl implements IAppUserService {
         vo.setTodayMined(todayMined);
         vo.setYesterdayIncomeAmount(yesterdayIncomeAmount);
         vo.setDetails(details);
-        return vo;
-    }
-
-    /**
-     *
-     * @param userId
-     * @param id
-     * @return
-     */
-    public AppUserEarningItemDetailVo selectEarningDetail(Long userId, Long id){
-        AppUserMinerIncome income = appUserMinerIncomeService.selectById(id);
-        if (income == null || (income.getUserId() != null && !income.getUserId().equals(userId))) {
-            return null;
-        }
-        AppUserEarningItemDetailVo vo = new AppUserEarningItemDetailVo();
-        vo.setId(income.getId());
-        DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String dateStr = income.getDate() == null ? null : income.getDate().toInstant().atZone(systemDefault()).toLocalDate().format(df);
-        vo.setDate(dateStr);
-        vo.setQuantity(income.getMinedAmount());
-        vo.setAmount(income.getIncomeRmb());
-        vo.setPowerCost(income.getPowerCost());
-        vo.setManagementFee(income.getManagementFee());
         return vo;
     }
 

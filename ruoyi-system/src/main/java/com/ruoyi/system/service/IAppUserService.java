@@ -19,5 +19,4 @@ public interface IAppUserService {
     AppUserMinerListVo selectMyMiners(Long userId);
     int register(String phone, String rawPassword);
     int updateProfile(Long userId, String name, String phone, String bankName, String bankAccount, String avatar);
-    AppUserEarningItemDetailVo selectEarningDetail(Long userId, Long id);
 }
