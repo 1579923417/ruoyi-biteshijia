@@ -3,6 +3,7 @@ package com.ruoyi.system.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.system.factory.ProxyFactory;
 import com.ruoyi.system.service.F2poolPublicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -19,29 +20,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * APP--排行 业务层处理
+ * @author Jamie
+ * @date 2025/12/10 12:13
+ */
 @Service
 public class F2poolPublicServiceImpl implements F2poolPublicService {
 
     @Autowired
+    private ProxyFactory proxyFactory;
+
     private RestTemplate proxyRestTemplate;
 
     @PostConstruct
     private void init() {
-        // 设置代理
-        Proxy proxy = new Proxy(
-                Proxy.Type.HTTP,
-                new InetSocketAddress("127.0.0.1", 7897)
-        );
-
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setProxy(proxy);
+        factory.setProxy(proxyFactory.buildHttpProxy());
         factory.setConnectTimeout(15000);
         factory.setReadTimeout(30000);
-
-        // 这里创建一个只在本类使用的 RestTemplate
-        proxyRestTemplate = new RestTemplate(factory);
+        this.proxyRestTemplate = new RestTemplate(factory);
     }
-
 
     @Override
     public List<Map<String, Object>> getCoinsTop100Simplified() {
@@ -53,11 +52,7 @@ public class F2poolPublicServiceImpl implements F2poolPublicService {
         headers.set("User-Agent", "Mozilla/5.0 (Java Proxy RestTemplate)");
 
         HttpEntity<String> entity = new HttpEntity<>("{}", headers);
-
-        // ★ 使用带代理的 RestTemplate 发送请求
         String resp = proxyRestTemplate.postForObject(url, entity, String.class);
-
-        System.out.println(resp);
 
         JSONObject obj = JSON.parseObject(resp);
         JSONObject data = obj.getJSONObject("data");
@@ -122,3 +117,4 @@ public class F2poolPublicServiceImpl implements F2poolPublicService {
         return list;
     }
 }
+

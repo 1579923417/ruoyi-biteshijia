@@ -3,8 +3,12 @@ package com.ruoyi.system.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.system.domain.F2poolAccount;
+import com.ruoyi.system.domain.WebsiteConfig;
+import com.ruoyi.system.factory.ProxyFactory;
 import com.ruoyi.system.service.F2PoolService;
 import com.ruoyi.system.service.F2poolAccountService;
+import com.ruoyi.system.service.IWebsiteConfigService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,14 +24,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 用户管理--f2pool用户管理 业务层处理
+ * @author Jamie
+ * @date 2025/12/10 12:13
+ */
 @Service
 public class F2PoolServiceImpl implements F2PoolService {
     @Autowired
     private F2poolAccountService f2poolAccountService;
 
-    private Proxy buildProxy(){
-        return new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 7897));
-    }
+    @Autowired
+    private ProxyFactory proxyFactory;
 
     private F2poolAccount resolveAccount(String username){
         if (username == null || username.isEmpty()) {
@@ -60,7 +68,9 @@ public class F2PoolServiceImpl implements F2PoolService {
     private String postJson(String url, Map<String, Object> body, Map<String, String> headers) {
         try {
             URL u = new URL(url);
-            HttpURLConnection conn = (HttpURLConnection) u.openConnection(buildProxy());
+            HttpURLConnection conn =
+                    (HttpURLConnection) u.openConnection(proxyFactory.buildHttpProxy());
+
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
@@ -68,18 +78,26 @@ public class F2PoolServiceImpl implements F2PoolService {
             conn.setDoInput(true);
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json;charset=utf-8");
+
             if (headers != null) {
                 for (Map.Entry<String, String> e : headers.entrySet()) {
                     conn.setRequestProperty(e.getKey(), e.getValue());
                 }
             }
+
             String json = JSON.toJSONString(body != null ? body : new HashMap<>());
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(json.getBytes(StandardCharsets.UTF_8));
             }
+
             int code = conn.getResponseCode();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                    code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(
+                            code >= 200 && code < 300
+                                    ? conn.getInputStream()
+                                    : conn.getErrorStream(),
+                            StandardCharsets.UTF_8))) {
+
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = br.readLine()) != null) {
