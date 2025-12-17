@@ -20,6 +20,8 @@ import com.ruoyi.system.domain.AppUser;
 import com.ruoyi.system.service.IAppUserService;
 /**
  * 用户管理--APP用户 前端控制器
+ *
+ * @author Jamie
  */
 @RestController
 @RequestMapping("/admin/app/user")
@@ -28,12 +30,27 @@ public class AppUserController extends BaseController {
     @Autowired
     private IAppUserService appUserService;
 
+    /**
+     * 用户列表查询
+     *
+     * <p>
+     * 支持：
+     * <ul>
+     *   <li>手机号精确查询</li>
+     *   <li>关键字模糊查询（用户名 / 手机号等）</li>
+     * </ul>
+     *
+     * @param keyword 关键字（可选）
+     * @param phone   手机号（可选）
+     * @return 分页后的用户列表
+     */
     @PreAuthorize("@ss.hasPermi('admin:appUser:list')")
     @GetMapping("/list")
     public TableDataInfo list(@RequestParam(value = "keyword", required = false) String keyword,
                               @RequestParam(value = "phone", required = false) String phone){
         AppUser query = new AppUser();
         query.setPhone(phone);
+        // 关键字搜索（支持多字段）
         if (StringUtils.isNotEmpty(keyword)) {
             query.getParams().put("keyword", keyword);
             query.setName(keyword);
@@ -43,12 +60,36 @@ public class AppUserController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * 查询用户详情
+     *
+     * @param id 用户ID
+     * @return 用户详情信息
+     */
     @PreAuthorize("@ss.hasPermi('admin:appUser:query')")
     @GetMapping("/{id}")
     public AjaxResult get(@PathVariable("id") Long id){
         return AjaxResult.success(appUserService.selectById(id));
     }
 
+    /**
+     * 新增 APP 用户
+     *
+     * <p>
+     * 校验规则：
+     * <ul>
+     *   <li>用户名、手机号不能为空</li>
+     *   <li>手机号必须唯一</li>
+     * </ul>
+     *
+     * <p>
+     * 如果未传入密码，则默认设置为：1234567
+     * （并进行加密存储）
+     * </p>
+     *
+     * @param entity 用户实体
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appUser:add')")
     @Log(title = "APP用户", businessType = BusinessType.INSERT)
     @PostMapping
@@ -56,6 +97,7 @@ public class AppUserController extends BaseController {
         if (StringUtils.isEmpty(entity.getName()) || StringUtils.isEmpty(entity.getPhone())) {
             return AjaxResult.error("用户名称与手机号不能为空");
         }
+        // 校验手机号唯一性
         if (appUserService.selectByPhone(entity.getPhone()) != null) {
             return AjaxResult.error("手机号已存在");
         }
@@ -66,6 +108,19 @@ public class AppUserController extends BaseController {
         return toAjax(appUserService.insert(entity));
     }
 
+    /**
+     * 编辑 APP 用户信息
+     *
+     * <p>
+     * 校验：
+     * <ul>
+     *   <li>ID 必须存在</li>
+     *   <li>手机号不可被其他用户占用</li>
+     * </ul>
+     *
+     * @param entity 用户实体
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appUser:edit')")
     @Log(title = "APP用户", businessType = BusinessType.UPDATE)
     @PutMapping
@@ -80,6 +135,12 @@ public class AppUserController extends BaseController {
         return toAjax(appUserService.update(entity));
     }
 
+    /**
+     * 删除 APP 用户（支持批量）
+     *
+     * @param ids 用户ID数组
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appUser:remove')")
     @Log(title = "APP用户", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
@@ -87,6 +148,16 @@ public class AppUserController extends BaseController {
         return toAjax(appUserService.deleteByIds(ids));
     }
 
+    /**
+     * 重置 APP 用户登录密码
+     *
+     * <p>
+     * 默认重置为：123456（加密存储）
+     * </p>
+     *
+     * @param id 用户ID
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appUser:resetPwd')")
     @Log(title = "APP用户密码重置", businessType = BusinessType.UPDATE)
     @PutMapping("/resetPwd/{id}")

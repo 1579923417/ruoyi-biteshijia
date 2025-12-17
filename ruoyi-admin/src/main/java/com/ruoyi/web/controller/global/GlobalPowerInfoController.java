@@ -14,13 +14,30 @@ import com.ruoyi.system.domain.GlobalPowerInfo;
 import com.ruoyi.system.service.IGlobalPowerInfoService;
 import io.swagger.annotations.Api;
 
+/**
+ * 全球电力信息管理 前端控制器
+ *
+ * @author Jamie
+ */
 @RestController
 @RequestMapping("/admin/global/power")
 @Api(tags = "全球电力信息")
 public class GlobalPowerInfoController extends BaseController {
+
     @Autowired
     private IGlobalPowerInfoService globalPowerInfoService;
 
+    /**
+     * 查询全球电力信息列表
+     *
+     * <p>
+     * 支持根据实体字段进行条件查询（如国家、地区等），
+     * 并通过 {@link BaseController#startPage()} 实现分页查询。
+     * </p>
+     *
+     * @param query 查询条件封装对象
+     * @return 分页后的全球电力信息列表
+     */
     @PreAuthorize("@ss.hasPermi('admin:globalPowerInfo:list')")
     @GetMapping("/list")
     public TableDataInfo list(GlobalPowerInfo query){
@@ -29,12 +46,29 @@ public class GlobalPowerInfoController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * 查询单条全球电力信息详情
+     *
+     * @param id 电力信息ID
+     * @return 电力信息详情
+     */
     @PreAuthorize("@ss.hasPermi('admin:globalPowerInfo:query')")
     @GetMapping("/{id}")
     public AjaxResult get(@PathVariable("id") Long id){
         return AjaxResult.success(globalPowerInfoService.selectById(id));
     }
 
+    /**
+     * 新增全球电力信息
+     *
+     * <p>
+     * 用于后台新增国家 / 地区的电力相关信息，
+     * 数据录入后可用于成本测算、展示分析等业务模块。
+     * </p>
+     *
+     * @param entity 全球电力信息实体
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:globalPowerInfo:add')")
     @Log(title = "全球电力信息", businessType = BusinessType.INSERT)
     @PostMapping
@@ -42,6 +76,17 @@ public class GlobalPowerInfoController extends BaseController {
         return toAjax(globalPowerInfoService.insert(entity));
     }
 
+    /**
+     * 修改全球电力信息
+     *
+     * <p>
+     * 对已有的电力数据进行维护更新，
+     * 例如电价调整、电力结构变更等。
+     * </p>
+     *
+     * @param entity 全球电力信息实体
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:globalPowerInfo:edit')")
     @Log(title = "全球电力信息", businessType = BusinessType.UPDATE)
     @PutMapping
@@ -49,6 +94,17 @@ public class GlobalPowerInfoController extends BaseController {
         return toAjax(globalPowerInfoService.update(entity));
     }
 
+    /**
+     * 删除全球电力信息（支持批量）
+     *
+     * <p>
+     * 仅建议在数据录入错误或不再使用的情况下删除，
+     * 避免影响历史成本计算或统计结果。
+     * </p>
+     *
+     * @param ids 电力信息ID数组
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:globalPowerInfo:remove')")
     @Log(title = "全球电力信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")

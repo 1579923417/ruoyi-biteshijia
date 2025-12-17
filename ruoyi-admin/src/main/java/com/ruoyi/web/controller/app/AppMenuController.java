@@ -21,6 +21,8 @@ import com.ruoyi.system.enums.MenuType;
 
 /**
  * 页面设置--APP菜单管理 前端控制器
+ *
+ * @author Jamie
  */
 @RestController
 @RequestMapping("/admin/app/menu")
@@ -29,6 +31,12 @@ public class AppMenuController extends BaseController {
     @Autowired
     private IAppMenuService appMenuService;
 
+    /**
+     * 查询 APP 菜单分页列表
+     *
+     * @param query 查询条件（支持菜单名称、状态、父级ID等）
+     * @return 分页后的菜单列表数据
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:list')")
     @GetMapping("/list")
     public TableDataInfo list(AppMenu query){
@@ -37,6 +45,16 @@ public class AppMenuController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * 查询 APP 根菜单列表
+     *
+     * <p>
+     * 默认只返回 parentId = 0 的菜单，用于构建菜单树或父级菜单选择
+     * </p>
+     *
+     * @param query 查询条件
+     * @return 根菜单分页列表
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:list')")
     @GetMapping("/roots")
     public TableDataInfo roots(AppMenu query){
@@ -46,12 +64,24 @@ public class AppMenuController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * 根据菜单 ID 查询菜单详情
+     *
+     * @param id 菜单主键ID
+     * @return 菜单详细信息
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:query')")
     @GetMapping("/{id}")
     public AjaxResult get(@PathVariable("id") Long id){
         return AjaxResult.success(appMenuService.selectById(id));
     }
 
+    /**
+     * 新增 APP 菜单
+     *
+     * @param entity 菜单实体对象
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:add')")
     @Log(title = "APP菜单", businessType = BusinessType.INSERT)
     @PostMapping
@@ -59,6 +89,12 @@ public class AppMenuController extends BaseController {
         return toAjax(appMenuService.insert(entity));
     }
 
+    /**
+     * 编辑 APP 菜单
+     *
+     * @param entity 菜单实体对象（需包含ID）
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:edit')")
     @Log(title = "APP菜单", businessType = BusinessType.UPDATE)
     @PutMapping
@@ -66,6 +102,12 @@ public class AppMenuController extends BaseController {
         return toAjax(appMenuService.update(entity));
     }
 
+    /**
+     * 删除 APP 菜单（支持批量）
+     *
+     * @param ids 菜单ID数组
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:remove')")
     @Log(title = "APP菜单", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
@@ -73,6 +115,17 @@ public class AppMenuController extends BaseController {
         return toAjax(appMenuService.deleteByIds(ids));
     }
 
+    /**
+     * 修改 APP 菜单状态
+     *
+     * <p>
+     * 用于启用或禁用菜单，不影响菜单结构，仅控制前端是否展示
+     * </p>
+     *
+     * @param id 菜单ID
+     * @param status 状态值（0：禁用，1：启用）
+     * @return 操作结果
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:edit')")
     @Log(title = "APP菜单状态", businessType = BusinessType.UPDATE)
     @PutMapping("/changeStatus")
@@ -80,6 +133,15 @@ public class AppMenuController extends BaseController {
         return toAjax(appMenuService.updateStatus(id, status));
     }
 
+    /**
+     * 获取 APP 菜单类型枚举列表
+     *
+     * <p>
+     * 返回菜单类型的 code / desc，用于前端下拉选择
+     * </p>
+     *
+     * @return 菜单类型枚举集合
+     */
     @PreAuthorize("@ss.hasPermi('admin:appMenu:list')")
     @GetMapping("/types")
     public AjaxResult types(){
