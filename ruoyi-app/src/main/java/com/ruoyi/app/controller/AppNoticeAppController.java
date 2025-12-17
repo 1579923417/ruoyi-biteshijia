@@ -14,6 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * APP —— 通知中心 前端控制器
+ *
+ * @author Jamie
+ * @date 2025/12/10 12:13
+ */
 @RestController
 @RequestMapping("/app/notice")
 @Api(tags = "APP--通知")

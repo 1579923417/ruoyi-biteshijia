@@ -17,6 +17,7 @@ import java.util.Map;
 
 /**
  * APP--用户中心 前端控制器
+ *
  * @author Jamie
  * @date 2025/12/10 12:13
  */
@@ -34,11 +35,15 @@ public class AppUserController {
     private IAppF2poolService appF2poolService;
 
     /**
-     * APP 用户登录接口
-     * 支持手机号+密码登录
-     * 登录成功返回 token 和有效期
+     * APP 用户登录（手机号 + 密码）
      *
-     * @return 返回 token 信息或错误信息
+     * <p>
+     * 登录成功后返回登录凭证信息（token、有效期等），
+     * 前端需在后续请求的 Authorization 头中携带该 token。
+     * </p>
+     *
+     * @param body 请求体，包含 phone、password
+     * @return AjaxResult 登录结果
      */
     @Anonymous
     @PostMapping("/login")
@@ -50,6 +55,15 @@ public class AppUserController {
         return AjaxResult.success(vo);
     }
 
+    /**
+     * 发送登录验证码
+     *
+     * <p>
+     * 用于验证码登录场景，验证码发送至用户手机号。
+     * </p>
+     *
+     * @param phone 手机号
+     */
     @Anonymous
     @PostMapping("/sendCode")
     @ApiOperation("app发送登录验证码")
@@ -58,6 +72,18 @@ public class AppUserController {
         return AjaxResult.success();
     }
 
+    /**
+     * 验证码登录
+     *
+     * <p>
+     * 校验手机号与验证码后完成登录，
+     * 登录成功返回 token 信息。
+     * </p>
+     *
+     * @param phone 手机号
+     * @param code  验证码
+     * @return AjaxResult 登录结果
+     */
     @Anonymous
     @PostMapping("/loginByCode")
     @ApiOperation("app验证码登录")
@@ -67,18 +93,24 @@ public class AppUserController {
         return AjaxResult.success(vo);
     }
 
-    /**
-     * APP 用户注册
-     * 传入手机号与密码，完成账号创建
-     */
-    @Anonymous
-    @PostMapping("/register")
-    @ApiOperation("app用户注册")
-    public AjaxResult register(@RequestParam("phone") String phone,
-                               @RequestParam("password") String password){
-        int rows = appUserService.register(phone, password);
-        return rows > 0 ? AjaxResult.success() : AjaxResult.error("注册失败");
-    }
+//    /**
+//     * APP 用户注册
+//     *
+//     * <p>
+//     * 使用手机号和密码创建新用户账号。
+//     * </p>
+//     *
+//     * @param phone    手机号
+//     * @param password 密码
+//     */
+//    @Anonymous
+//    @PostMapping("/register")
+//    @ApiOperation("app用户注册")
+//    public AjaxResult register(@RequestParam("phone") String phone,
+//                               @RequestParam("password") String password){
+//        int rows = appUserService.register(phone, password);
+//        return rows > 0 ? AjaxResult.success() : AjaxResult.error("注册失败");
+//    }
 
     /**
      * 获取当前登录用户信息
@@ -164,7 +196,13 @@ public class AppUserController {
     }
 
     /**
-     * APP 退出登录
+     * APP 用户退出登录
+     *
+     * <p>
+     * 清除当前用户的登录态（token 失效）。
+     * </p>
+     *
+     * @param request 请求对象
      */
     @PostMapping("/logout")
     @ApiOperation("app退出登录")

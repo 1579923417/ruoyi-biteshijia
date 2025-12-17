@@ -171,23 +171,23 @@ public class AppUserServiceImpl implements IAppUserService {
         return vo;
     }
 
-    /**
-     * APP 用户注册：校验手机号唯一，密码加密存储
-     */
-    public int register(String phone, String rawPassword){
-        if (StringUtils.isEmpty(phone) || StringUtils.isEmpty(rawPassword)){
-            throw new IllegalArgumentException("参数错误");
-        }
-        AppUser existed = mapper.selectByPhone(phone);
-        if (existed != null){
-            throw new RuntimeException("手机号已存在");
-        }
-        AppUser entity = new AppUser();
-        entity.setPhone(phone);
-        entity.setName(phone);
-        entity.setPassword(SecurityUtils.encryptPassword(rawPassword));
-        return mapper.insert(entity);
-    }
+//    /**
+//     * APP 用户注册：校验手机号唯一，密码加密存储
+//     */
+//    public int register(String phone, String rawPassword){
+//        if (StringUtils.isEmpty(phone) || StringUtils.isEmpty(rawPassword)){
+//            throw new IllegalArgumentException("参数错误");
+//        }
+//        AppUser existed = mapper.selectByPhone(phone);
+//        if (existed != null){
+//            throw new RuntimeException("手机号已存在");
+//        }
+//        AppUser entity = new AppUser();
+//        entity.setPhone(phone);
+//        entity.setName(phone);
+//        entity.setPassword(SecurityUtils.encryptPassword(rawPassword));
+//        return mapper.insert(entity);
+//    }
 
     /**
      * 更新个人中心资料：名称、手机号、开户行、账户号码
