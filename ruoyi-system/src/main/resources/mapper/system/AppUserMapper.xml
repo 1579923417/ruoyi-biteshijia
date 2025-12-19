@@ -68,6 +68,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="bankName != null">bank_name = #{bankName},</if>
             <if test="bankAccount != null">bank_account = #{bankAccount},</if>
             <if test="minerCount != null">miner_count = #{minerCount},</if>
+            <if test="totalIncome != null">total_income = #{totalIncome},</if>
+            <if test="yesterdayIncome != null">yesterday_income = #{yesterdayIncome},</if>
+            <if test="todayIncome != null">today_income = #{todayIncome},</if>
             <if test="password != null">password = #{password},</if>
             <if test="avatar != null">avatar = #{avatar},</if>
             <if test="f2poolToken != null">f2pool_token = #{f2poolToken},</if>

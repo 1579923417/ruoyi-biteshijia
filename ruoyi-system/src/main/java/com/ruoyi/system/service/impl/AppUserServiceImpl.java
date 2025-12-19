@@ -24,6 +24,10 @@ import com.ruoyi.system.service.IMinerBrandService;
 import com.ruoyi.system.domain.MinerBrand;
 import com.ruoyi.system.domain.AppUserMiningDailySummary;
 
+import com.ruoyi.system.domain.vo.F2poolOverviewVo;
+import com.ruoyi.system.service.IAppF2poolService;
+import org.springframework.context.annotation.Lazy;
+
 import static java.time.ZoneId.systemDefault;
 
 @Service
@@ -36,6 +40,9 @@ public class AppUserServiceImpl implements IAppUserService {
     private IMinerBrandService minerBrandService;
     @Autowired
     private IAppUserMiningDailySummaryService appUserMiningDailySummaryService;
+    @Autowired
+    @Lazy
+    private IAppF2poolService appF2poolService;
 
     public AppUser selectById(Long id){
         return mapper.selectById(id);
@@ -69,6 +76,28 @@ public class AppUserServiceImpl implements IAppUserService {
     public AppUserProfileVo selectProfileByUserId(Long id){
         AppUser u = mapper.selectById(id);
         if (u == null) return null;
+
+        // Sync from F2Pool
+        F2poolOverviewVo overview = appF2poolService.getOverview(id);
+        if (overview != null) {
+            // Update DB
+            AppUser userUpdate = new AppUser();
+            userUpdate.setId(u.getId());
+            userUpdate.setMinerCount(overview.getMinerCount());
+            userUpdate.setTotalIncome(overview.getTotalIncome());
+            userUpdate.setYesterdayIncome(overview.getTotalYesterdayIncome());
+            userUpdate.setTodayIncome(overview.getTotalTodayIncome());
+            mapper.update(userUpdate);
+
+            // Update in-memory object for VO
+            if (overview.getMinerCount() != null) {
+                u.setMinerCount(overview.getMinerCount());
+            }
+            u.setTotalIncome(overview.getTotalIncome());
+            u.setYesterdayIncome(overview.getTotalYesterdayIncome());
+            u.setTodayIncome(overview.getTotalTodayIncome());
+        }
+
         AppUserProfileVo vo = new AppUserProfileVo();
         vo.setId(u.getId());
         vo.setName(u.getName());

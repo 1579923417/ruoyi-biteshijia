@@ -126,15 +126,6 @@ public class AppUserController {
             return AjaxResult.error("未登录或已过期");
         }
         AppUserProfileVo vo = appUserService.selectProfileByUserId(user.getId());
-        F2poolOverviewVo overview = appF2poolService.getOverview(user.getId());
-        if (overview != null) {
-            vo.setYesterdayIncome(overview.getTotalYesterdayIncome());
-            vo.setTodayIncome(overview.getTotalTodayIncome());
-            vo.setTotalIncome(overview.getTotalIncome());
-            if (overview.getMinerCount() != null) {
-                vo.setMinerCount(overview.getMinerCount());
-            }
-        }
         return AjaxResult.success(vo);
     }
 
