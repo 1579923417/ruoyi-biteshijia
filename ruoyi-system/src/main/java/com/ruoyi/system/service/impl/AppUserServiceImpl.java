@@ -1,14 +1,17 @@
 package com.ruoyi.system.service.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.ruoyi.system.factory.ProxyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.system.domain.AppUser;
 import com.ruoyi.system.domain.AppUserMiner;
 import com.ruoyi.system.domain.vo.AppUserProfileVo;
@@ -27,23 +30,69 @@ import com.ruoyi.system.domain.AppUserMiningDailySummary;
 import com.ruoyi.system.domain.vo.F2poolOverviewVo;
 import com.ruoyi.system.service.IAppF2poolService;
 import org.springframework.context.annotation.Lazy;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.common.utils.http.HttpUtils;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
+
+import javax.annotation.PostConstruct;
 
 import static java.time.ZoneId.systemDefault;
-
+/**
+ * App 用户核心业务实现类
+ *
+ * 主要职责：
+ * 1. 用户基础信息的 CRUD
+ * 2. 用户个人中心数据聚合（矿机数量、收益统计）
+ * 3. 收益换算（BTC → USDT → CNY）
+ * 4. 用户收益摘要与明细构建
+ * 5. 用户矿机列表与算力汇总
+ *
+ * 说明：
+ * - 实时数据主要来源于 F2Pool
+ * - 金额相关统一使用 BigDecimal，避免精度问题
+ *
+ * @author Jamie
+ */
 @Service
 public class AppUserServiceImpl implements IAppUserService {
+
+    /** 用户表 Mapper */
     @Autowired
     private AppUserMapper mapper;
+
+    /** 用户矿机 Service */
     @Autowired
     private IAppUserMinerService appUserMinerService;
+
+    /** 矿机品牌 Service（用于算力信息） */
     @Autowired
     private IMinerBrandService minerBrandService;
+
+    /** 用户每日挖矿收益汇总 Service */
     @Autowired
     private IAppUserMiningDailySummaryService appUserMiningDailySummaryService;
+
+    /**
+     * F2Pool 对接 Service
+     * 使用 @Lazy 避免循环依赖
+     */
     @Autowired
     @Lazy
     private IAppF2poolService appF2poolService;
 
+    @Autowired
+    private ProxyFactory proxyFactory;
+
+    private RestTemplate proxyRestTemplate;
+
+    /* =========================
+       基础查询与 CRUD
+       ========================= */
     public AppUser selectById(Long id){
         return mapper.selectById(id);
     }
@@ -68,36 +117,56 @@ public class AppUserServiceImpl implements IAppUserService {
         return mapper.deleteByIds(ids);
     }
 
+    /* =========================
+       用户个人中心数据
+       ========================= */
+
     /**
+     * 查询用户个人中心信息
      *
-     * @param id
-     * @return
+     * 数据来源说明：
+     * - 基础信息：本地 AppUser 表
+     * - 矿机数量 & 收益：实时从 F2Pool 拉取
+     * - 收益单位：BTC → 换算为 CNY 后落库
+     *
+     * @param id 用户ID
+     * @return 用户个人中心 VO
      */
     public AppUserProfileVo selectProfileByUserId(Long id){
         AppUser u = mapper.selectById(id);
         if (u == null) return null;
 
-        // Sync from F2Pool
+        // ===== 从 F2Pool 同步最新概览数据 =====
         F2poolOverviewVo overview = appF2poolService.getOverview(id);
         if (overview != null) {
-            // Update DB
+            // 原始 BTC 收益
+            BigDecimal btcYesterday = overview.getTotalYesterdayIncome();
+            BigDecimal btcTotal = overview.getTotalIncome();
+            BigDecimal btcToday = overview.getTotalTodayIncome();
+            // BTC → CNY 换算
+            BigDecimal cnyYesterday = convertBtcToCny(btcYesterday);
+            BigDecimal cnyTotal = convertBtcToCny(btcTotal);
+            BigDecimal cnyToday = convertBtcToCny(btcToday);
+
+            // ===== 回写数据库（用于列表 / 缓存展示）=====
             AppUser userUpdate = new AppUser();
             userUpdate.setId(u.getId());
             userUpdate.setMinerCount(overview.getMinerCount());
-            userUpdate.setTotalIncome(overview.getTotalIncome());
-            userUpdate.setYesterdayIncome(overview.getTotalYesterdayIncome());
-            userUpdate.setTodayIncome(overview.getTotalTodayIncome());
+            userUpdate.setTotalIncome(cnyTotal);
+            userUpdate.setYesterdayIncome(cnyYesterday);
+            userUpdate.setTodayIncome(cnyToday);
             mapper.update(userUpdate);
 
-            // Update in-memory object for VO
+            // ===== 同步到内存对象，用于 VO 返回 =====
             if (overview.getMinerCount() != null) {
                 u.setMinerCount(overview.getMinerCount());
             }
-            u.setTotalIncome(overview.getTotalIncome());
-            u.setYesterdayIncome(overview.getTotalYesterdayIncome());
-            u.setTodayIncome(overview.getTotalTodayIncome());
+            u.setTotalIncome(cnyTotal);
+            u.setYesterdayIncome(cnyYesterday);
+            u.setTodayIncome(cnyToday);
         }
 
+        // 构建个人中心返回对象
         AppUserProfileVo vo = new AppUserProfileVo();
         vo.setId(u.getId());
         vo.setName(u.getName());
@@ -112,10 +181,122 @@ public class AppUserServiceImpl implements IAppUserService {
         return vo;
     }
 
+    /* =========================
+       收益换算逻辑
+       ========================= */
     /**
-     * 构建用户收益摘要与收益列表
-     * 汇总累计挖矿、昨日挖矿、今日预计挖矿、今日已挖，以及昨日收益金额
-     * 同时返回昨日结算的收益列表项（结算时间为每日 08:00）
+     * BTC → CNY 换算
+     *
+     * 计算链路：
+     * BTC × (BTC → USDT 汇率) × (USDT → CNY 汇率)
+     *
+     * 说明：
+     * - 不在入口直接 return
+     * - 统一在末尾做安全兜底
+     */
+    private BigDecimal convertBtcToCny(BigDecimal btcAmount) {
+
+        // 1. 参数规范化（不直接中断流程）
+        BigDecimal safeBtcAmount = btcAmount == null
+                ? BigDecimal.ZERO
+                : btcAmount;
+
+        // 2. 获取 BTC → USDT 汇率
+        BigDecimal btcToUsdt = fetchRate(
+                "https://www.exchange-rates.org/zh/api/v2/rates/lookup" +
+                        "?isoTo=USDT&isoFrom=BTC&amount=1&pageCode=ConverterForPair"
+        );
+
+        // 3. 获取 USDT → CNY 汇率
+        BigDecimal usdtToCny = fetchRate(
+                "https://www.exchange-rates.org/zh/api/v2/rates/lookup" +
+                        "?isoTo=CNY&isoFrom=USDT&amount=1&pageCode=ConverterForPair"
+        );
+
+        // 4. 汇率异常兜底（这里才 return）
+        if (btcToUsdt == null || usdtToCny == null) {
+            return BigDecimal.ZERO;
+        }
+
+        // 5. 金额换算
+        BigDecimal rawAmount = safeBtcAmount
+                .multiply(btcToUsdt)
+                .multiply(usdtToCny);
+
+        // 6. 金额格式化（统一出口）
+        return toMoney(rawAmount);
+    }
+
+
+    @PostConstruct
+    private void init() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setProxy(proxyFactory.buildHttpProxy());
+        factory.setConnectTimeout(15000);
+        factory.setReadTimeout(30000);
+        this.proxyRestTemplate = new RestTemplate(factory);
+    }
+
+    /**
+     * 获取实时汇率
+     *
+     * 从官方 JSON 返回中读取 Rate 字段
+     */
+    private BigDecimal fetchRate(String url) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("User-Agent", "Mozilla/5.0 (Java Proxy RestTemplate)");
+
+            HttpEntity<String> entity = new HttpEntity<>("{}", headers);
+            // 发起请求并获取原始响应
+            String resp = proxyRestTemplate.postForObject(url, entity, String.class);
+            if (resp == null || resp.isEmpty()) {
+                return null;
+            }
+
+            JSONObject obj = JSON.parseObject(resp);
+            return obj.getBigDecimal("Rate");
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 金额格式化（用于前端展示）
+     *
+     * 处理规则：
+     * 1. 统一保留 2 位小数，四舍五入
+     * 2. 若真实金额 > 0，但格式化后为 0.00
+     *    → 强制返回 0.01，避免用户误解为“无收益”
+     */
+    private BigDecimal toMoney(BigDecimal amount) {
+        if (amount == null) return BigDecimal.ZERO;
+
+        BigDecimal scaled = amount.setScale(2, RoundingMode.HALF_UP);
+
+        if (scaled.signum() == 0 && amount.signum() > 0) {
+            return new BigDecimal("0.01");
+        }
+
+        return scaled;
+    }
+
+    /* =========================
+       用户收益汇总与明细
+       ========================= */
+
+    /**
+     * 构建用户收益摘要与收益明细
+     *
+     * 包含：
+     * - 今日预计收益
+     * - 昨日收益金额
+     * - 昨日结算记录（08:00 结算）
+     *
+     * @param id 用户ID
+     * @return 收益汇总 VO
      */
     public AppUserEarningsVo selectEarningsByUserId(Long id){
         AppUserMiner query = new AppUserMiner();
@@ -124,15 +305,16 @@ public class AppUserServiceImpl implements IAppUserService {
 
         BigDecimal zero = BigDecimal.ZERO;
 
-        BigDecimal totalMined = BigDecimal.ZERO; // totalMined removed from DB
+        BigDecimal totalMined = BigDecimal.ZERO; 
 
-        BigDecimal yesterdayMined = BigDecimal.ZERO; // yesterdayMined removed from DB
+        BigDecimal yesterdayMined = BigDecimal.ZERO; 
 
+        // 今日预计挖矿收益
         BigDecimal todayMined = miners.stream()
                 .map(m -> m.getEstimatedTodayIncome() == null ? zero : m.getEstimatedTodayIncome())
                 .reduce(zero, BigDecimal::add);
 
-
+        // 昨日收益金额
         BigDecimal yesterdayIncomeAmount = miners.stream()
                 .map(m -> m.getYesterdayIncome() == null ? zero : m.getYesterdayIncome())
                 .reduce(zero, BigDecimal::add);
@@ -161,10 +343,15 @@ public class AppUserServiceImpl implements IAppUserService {
         return vo;
     }
 
+    /* =========================
+       用户矿机列表
+       ========================= */
+
     /**
+     * 查询当前用户的矿机列表及总算力
      *
-     * @param userId
-     * @return
+     * @param userId 用户ID
+     * @return 矿机列表 VO
      */
     public AppUserMinerListVo selectMyMiners(Long userId){
         AppUserMiner query = new AppUserMiner();
@@ -216,7 +403,13 @@ public class AppUserServiceImpl implements IAppUserService {
 //    }
 
     /**
-     * 更新个人中心资料：名称、手机号、开户行、账户号码
+     * 更新个人中心资料
+     *
+     * 可修改字段：
+     * - 昵称
+     * - 手机号（唯一校验）
+     * - 银行信息
+     * - 头像
      */
     public int updateProfile(Long userId, String name, String phone, String bankName, String bankAccount, String avatar){
         if (userId == null){

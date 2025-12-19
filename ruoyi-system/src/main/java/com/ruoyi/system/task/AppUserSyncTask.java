@@ -11,8 +11,12 @@ import com.ruoyi.system.service.IAppUserMinerService;
 import com.ruoyi.system.service.IAppUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import com.ruoyi.common.utils.http.HttpUtils;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 /**
  * App 用户数据同步定时任务
@@ -103,24 +107,31 @@ public class AppUserSyncTask {
         // 2. 获取 F2Pool 概览数据 (包含矿机总数、收益统计)
         F2poolOverviewVo overview = appF2poolService.getOverview(userId);
         if (overview != null) {
-            // 更新 AppUser 表统计字段
+            BigDecimal btcYesterday = overview.getTotalYesterdayIncome();
+            BigDecimal btcTotal = overview.getTotalIncome();
+            BigDecimal btcToday = overview.getTotalTodayIncome();
+
+            BigDecimal cnyYesterday = convertBtcToCny(btcYesterday);
+            BigDecimal cnyTotal = convertBtcToCny(btcTotal);
+            BigDecimal cnyToday = convertBtcToCny(btcToday);
+
             AppUser userUpdate = new AppUser();
             userUpdate.setId(userId);
-            
+
             // 只有当 F2Pool 返回有效数据时才更新
             if (overview.getMinerCount() != null) {
                 userUpdate.setMinerCount(overview.getMinerCount());
             }
-            if (overview.getTotalIncome() != null) {
-                userUpdate.setTotalIncome(overview.getTotalIncome());
+            if (cnyTotal != null) {
+                userUpdate.setTotalIncome(cnyTotal);
             }
-            if (overview.getTotalYesterdayIncome() != null) {
-                userUpdate.setYesterdayIncome(overview.getTotalYesterdayIncome());
+            if (cnyYesterday != null) {
+                userUpdate.setYesterdayIncome(cnyYesterday);
             }
-            if (overview.getTotalTodayIncome() != null) {
-                userUpdate.setTodayIncome(overview.getTotalTodayIncome());
+            if (cnyToday != null) {
+                userUpdate.setTodayIncome(cnyToday);
             }
-            
+
             appUserService.update(userUpdate);
         }
 
@@ -164,8 +175,27 @@ public class AppUserSyncTask {
             AppUserMiner existMiner = existList.get(0);
             AppUserMiner updateMiner = new AppUserMiner();
             updateMiner.setId(existMiner.getId());
-            updateMiner.setTotalIncome(item.getTotalIncome());
+            updateMiner.setTotalIncome(convertBtcToCny(item.getTotalIncome()));
             appUserMinerService.update(updateMiner);
+        }
+    }
+
+    private BigDecimal convertBtcToCny(BigDecimal btcAmount) {
+        if (btcAmount == null) return BigDecimal.ZERO;
+        BigDecimal btcToUsdt = fetchRate("https://www.exchange-rates.org/zh/api/v2/rates/lookup?isoTo=USDT&isoFrom=BTC&amount=1&pageCode=ConverterForPair");
+        BigDecimal usdtToCny = fetchRate("https://www.exchange-rates.org/zh/api/v2/rates/lookup?isoTo=CNY&isoFrom=USDT&amount=1&pageCode=ConverterForPair");
+        if (btcToUsdt == null || usdtToCny == null) return BigDecimal.ZERO;
+        return btcAmount.multiply(btcToUsdt).multiply(usdtToCny);
+    }
+
+    private BigDecimal fetchRate(String url) {
+        try {
+            String rsp = HttpUtils.sendGet(url);
+            if (rsp == null || rsp.isEmpty()) return null;
+            JSONObject obj = JSON.parseObject(rsp);
+            return obj.getBigDecimal("Rate");
+        } catch (Exception e) {
+            return null;
         }
     }
 }
