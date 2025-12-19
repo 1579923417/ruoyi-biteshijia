@@ -10,37 +10,42 @@ public class AppUserMiner extends BaseEntity implements Serializable {
 
     private Long id;
     private Long userId;
+    private String miningUserName;
     private Long brandId;
+    // brandName is populated by join from miner_brand
     private String brandName;
     private String apiCode;
     private BigDecimal managementFeeRate;
-    private BigDecimal totalMined;
-    private BigDecimal yesterdayMined;
-    private BigDecimal todayMined;
+    private BigDecimal estimatedTodayIncome;
     private BigDecimal totalIncome;
     private BigDecimal yesterdayIncome;
     private Integer status;
     private Date createTime;
     private Date updateTime;
+    private String userName;
 
+    public String getBrandName() {
+        return brandName;
+    }
+    public void setBrandName(String brandName) {
+        this.brandName = brandName;
+    }
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
     public Long getBrandId() { return brandId; }
     public void setBrandId(Long brandId) { this.brandId = brandId; }
-    public String getBrandName() { return brandName; }
-    public void setBrandName(String brandName) { this.brandName = brandName; }
+    public String getMiningUserName() { return miningUserName; }
+    public void setMiningUserName(String miningUserName) { this.miningUserName = miningUserName; }
     public String getApiCode() { return apiCode; }
     public void setApiCode(String apiCode) { this.apiCode = apiCode; }
     public BigDecimal getManagementFeeRate() { return managementFeeRate; }
     public void setManagementFeeRate(BigDecimal managementFeeRate) { this.managementFeeRate = managementFeeRate; }
-    public BigDecimal getTotalMined() { return totalMined; }
-    public void setTotalMined(BigDecimal totalMined) { this.totalMined = totalMined; }
-    public BigDecimal getYesterdayMined() { return yesterdayMined; }
-    public void setYesterdayMined(BigDecimal yesterdayMined) { this.yesterdayMined = yesterdayMined; }
-    public BigDecimal getTodayMined() { return todayMined; }
-    public void setTodayMined(BigDecimal todayMined) { this.todayMined = todayMined; }
+    public BigDecimal getEstimatedTodayIncome() { return estimatedTodayIncome; }
+    public void setEstimatedTodayIncome(BigDecimal estimatedTodayIncome) { this.estimatedTodayIncome = estimatedTodayIncome; }
     public BigDecimal getTotalIncome() { return totalIncome; }
     public void setTotalIncome(BigDecimal totalIncome) { this.totalIncome = totalIncome; }
     public BigDecimal getYesterdayIncome() { return yesterdayIncome; }

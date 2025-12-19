@@ -11,6 +11,13 @@ public class AppUser extends BaseEntity implements Serializable {
     private Long id;
     private String name;
     private String phone;
+
+    /** F2Pool的API token */
+    private String f2poolToken;
+
+    /** API 地址，默认 https://api.f2pool.com */
+    private String f2poolUrl;
+
     private String bankName;
     private String bankAccount;
     private Integer minerCount;
@@ -20,8 +27,6 @@ public class AppUser extends BaseEntity implements Serializable {
     private Date updateTime;
     private String password;
     private String avatar;
-    private String f2poolToken;
-    private String f2poolUrl;
 
     public String getAvatar() {
         return avatar;
@@ -35,6 +40,23 @@ public class AppUser extends BaseEntity implements Serializable {
     public void setName(String name) { this.name = name; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public String getF2poolToken() {
+        return f2poolToken;
+    }
+
+    public void setF2poolToken(String f2poolToken) {
+        this.f2poolToken = f2poolToken;
+    }
+
+    public String getF2poolUrl() {
+        return f2poolUrl;
+    }
+
+    public void setF2poolUrl(String f2poolUrl) {
+        this.f2poolUrl = f2poolUrl;
+    }
+
     public String getBankName() { return bankName; }
     public void setBankName(String bankName) { this.bankName = bankName; }
     public String getBankAccount() { return bankAccount; }
@@ -51,8 +73,4 @@ public class AppUser extends BaseEntity implements Serializable {
     public void setUpdateTime(Date updateTime) { this.updateTime = updateTime; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
-    public String getF2poolToken() { return f2poolToken; }
-    public void setF2poolToken(String f2poolToken) { this.f2poolToken = f2poolToken; }
-    public String getF2poolUrl() { return f2poolUrl; }
-    public void setF2poolUrl(String f2poolUrl) { this.f2poolUrl = f2poolUrl; }
 }

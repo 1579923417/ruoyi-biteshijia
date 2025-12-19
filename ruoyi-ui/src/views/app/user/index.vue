@@ -65,6 +65,9 @@
         <el-form-item label="账户号码" prop="bankAccount">
           <el-input v-model="addForm.bankAccount" placeholder="请输入收款账户号码" maxlength="50" />
         </el-form-item>
+        <el-form-item label="F2 Token" prop="f2poolToken">
+          <el-input v-model="addForm.f2poolToken" placeholder="请输入F2Pool Token" />
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitAdd">确 定</el-button>
@@ -73,7 +76,7 @@
     </el-dialog>
 
     <!-- 编辑详情 -->
-    <el-dialog title="编辑用户详情" :visible.sync="detailOpen" width="900px" append-to-body>
+    <el-dialog title="编辑用户详情" :visible.sync="detailOpen" width="1200px" append-to-body>
       <el-tabs v-model="detailActiveTab" tab-position="top">
         <el-tab-pane label="用户信息" name="user">
           <el-row :gutter="20">
@@ -137,23 +140,44 @@
         </el-tab-pane>
         <el-tab-pane label="矿机信息" name="miner">
           <el-card shadow="never">
-            <div style="margin-bottom:10px">
-              <el-button type="primary" size="mini" @click="openAddMiner">添加矿机</el-button>
+            <div style="margin-bottom:10px; display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+              <div style="display:flex; align-items:center;">
+                <el-form :inline="true" size="mini">
+                  <el-form-item label="矿机状态">
+                    <el-select v-model="minerQuery.status" placeholder="全部" clearable style="width: 140px">
+                      <el-option label="正常" :value="1" />
+                      <el-option label="停用" :value="0" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary" size="mini" @click="fetchMinerList(detail.id)">查询</el-button>
+                    <el-button size="mini" @click="resetMinerQuery">重置</el-button>
+                    <el-button type="primary" size="mini" @click="openAddMiner">添加矿机</el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
             </div>
             <el-table v-loading="minerLoading" :data="minerList">
               <el-table-column label="矿机ID" prop="id" align="center" width="120" />
-              <el-table-column label="矿机品牌" prop="brandName" align="center" />
+              <el-table-column label="矿机品牌" prop="brandName" align="center" width="120" />
+              <el-table-column label="矿机名称" prop="miningUserName" align="center" width="160" />
               <el-table-column label="管理费比率" align="center" width="160">
                 <template slot-scope="scope">
                   <el-input-number v-model="scope.row.managementFeeRate" :step="0.01" :precision="2" size="small" />
                   <el-button type="text" @click="saveFeeRate(scope.row)">保存</el-button>
                 </template>
               </el-table-column>
-              <el-table-column label="累计已挖" prop="totalMined" align="center" width="120" />
-              <el-table-column label="昨日已挖" prop="yesterdayMined" align="center" width="120" />
-              <el-table-column label="操作" align="center" width="160">
+              <el-table-column label="今日预计" prop="estimatedTodayIncome" align="center" width="140" />
+              <el-table-column label="昨日收益" prop="yesterdayIncome" align="center" width="140" />
+              <el-table-column label="累计收益" prop="totalIncome" align="center" width="140" />
+              <el-table-column label="启用状态" align="center" prop="status" width="120">
                 <template slot-scope="scope">
-                  <el-button type="text" @click="unbind(scope.row)">取消关联</el-button>
+                  <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" disabled></el-switch>
+                </template>
+              </el-table-column>
+              <el-table-column label="创建时间" prop="createTime" align="center" width="180">
+                <template slot-scope="scope">
+                  <span>{{ parseTime(scope.row.createTime) }}</span>
                 </template>
               </el-table-column>
             </el-table>
@@ -172,6 +196,9 @@
           <el-select v-model="addMinerForm.brandId" placeholder="请选择品牌" style="width: 300px">
             <el-option v-for="b in brandOptions" :key="b.id" :label="b.brandName" :value="b.id" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="矿机名称" prop="miningUserName">
+          <el-input v-model="addMinerForm.miningUserName" placeholder="2-15个小写字母或数字，且不能以数字开头" />
         </el-form-item>
         <el-form-item label="矿机关联码" prop="apiCode">
           <el-input v-model="addMinerForm.apiCode" placeholder="请输入矿机关联码" />
@@ -192,6 +219,7 @@
 import { listAppUser, addAppUser, updateAppUser, delAppUser, resetAppUserPwd, getAppUser, listUserMiner, updateUserMiner, unbindMiner, addUserMiner } from '@/api/app/user.js'
 import { listBrand } from '@/api/miner/brand.js'
 import ImageUpload from '@/components/ImageUpload/index.vue'
+import { parseTime } from '@/utils/ruoyi'
 
 export default {
   name: 'AppUser',
@@ -206,12 +234,13 @@ export default {
       ids: [],
       queryParams: { pageNum: 1, pageSize: 10, keyword: undefined, phone: undefined },
       addOpen: false,
-      addForm: { name: '', phone: '', avatar: '', bankName: '', bankAccount: '' },
+      addForm: { name: '', phone: '', avatar: '', bankName: '', bankAccount: '', f2poolToken: '' },
       addRules: {
         name: [{ required: true, message: '请输入用户名称', trigger: 'blur' }],
         phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }],
         bankName: [{ required: true, message: '请输入开户行', trigger: 'blur' }],
-        bankAccount: [{ required: true, message: '请输入账户号码', trigger: 'blur' }]
+        bankAccount: [{ required: true, message: '请输入账户号码', trigger: 'blur' }],
+        f2poolToken: [{ required: true, message: '请输入F2Pool Token', trigger: 'blur' }]
       },
       detailOpen: false,
       detail: {},
@@ -220,9 +249,14 @@ export default {
       editState: { avatar: false, name: false, phone: false, bankName: false, bankAccount: false },
       minerLoading: false,
       minerList: [],
+      minerQuery: { status: undefined },
       addMinerOpen: false,
-      addMinerForm: { brandId: undefined, apiCode: '', managementFeeRate: 0 },
+      addMinerForm: { brandId: undefined, miningUserName: '', apiCode: '', managementFeeRate: 0 },
       addMinerRules: {
+        miningUserName: [
+          { required: true, message: '请输入矿机名称', trigger: 'blur' },
+          { pattern: /^[a-z][a-z0-9]{1,14}$/, message: '请输入2-15个小写字母或数字，且不能以数字开头', trigger: 'blur' }
+        ],
         brandId: [{ required: true, message: '请选择品牌', trigger: 'change' }],
         apiCode: [{ required: true, message: '请输入矿机ID', trigger: 'blur' }],
         managementFeeRate: [{ required: true, message: '请输入比率', trigger: 'change' }]
@@ -234,6 +268,7 @@ export default {
     this.getList()
   },
   methods: {
+    parseTime,
     fullImageUrl(url) { if (!url) return ''; if (/^https?:\/\//.test(url)) return url; return this.baseUrl + url },
     getList() {
       this.loading = true
@@ -287,14 +322,15 @@ export default {
     onDetailAvatarChange(val) { this.detailEdit.avatar = Array.isArray(val) ? (val[0] || '') : val },
     fetchMinerList(userId) {
       this.minerLoading = true
-      listUserMiner({ userId, pageNum: 1, pageSize: 100 }).then(res => {
+      listUserMiner({ userId, status: this.minerQuery.status, pageNum: 1, pageSize: 100 }).then(res => {
         this.minerList = res.rows || []
         this.minerLoading = false
       }).catch(() => { this.minerLoading = false })
     },
+    resetMinerQuery() { this.minerQuery = { status: undefined }; if (this.detail && this.detail.id) { this.fetchMinerList(this.detail.id) } },
     openAddMiner() {
       this.addMinerOpen = true
-      this.addMinerForm = { brandId: undefined, apiCode: '', managementFeeRate: 0 }
+      this.addMinerForm = { brandId: undefined, apiCode: '', managementFeeRate: 0, miningUserName: '' }
       this.fetchBrandOptions()
     },
     fetchBrandOptions() {
@@ -310,9 +346,6 @@ export default {
     saveFeeRate(row) {
       const payload = { id: row.id, managementFeeRate: row.managementFeeRate }
       updateUserMiner(payload).then(() => { this.$modal.msgSuccess('保存成功') })
-    },
-    unbind(row) {
-      this.$modal.confirm('是否确认取消关联该矿机？').then(() => unbindMiner(row.id)).then(() => { this.$modal.msgSuccess('已取消关联'); this.fetchMinerList(this.detail.id) })
     }
   }
 }

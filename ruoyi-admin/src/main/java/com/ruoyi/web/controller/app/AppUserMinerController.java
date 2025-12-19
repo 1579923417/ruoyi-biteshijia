@@ -11,19 +11,32 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.system.domain.AppUser;
 import com.ruoyi.system.domain.AppUserMiner;
+import com.ruoyi.system.domain.vo.AppUserMinerAddReq;
+import com.ruoyi.system.service.F2PoolService;
 import com.ruoyi.system.service.IAppUserMinerService;
+import com.ruoyi.system.service.IAppUserService;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
+import com.alibaba.fastjson2.JSONObject;
+
 /**
  * 用户管理--APP用户矿机 前端控制器
  */
 @RestController
 @RequestMapping("/admin/app/user/miner")
 @Api(tags = "用户管理--APP用户矿机")
+@Anonymous
 public class AppUserMinerController extends BaseController {
     @Autowired
     private IAppUserMinerService appUserMinerService;
+
+    @Autowired
+    private IAppUserService appUserService;
 
     @PreAuthorize("@ss.hasPermi('admin:appUserMiner:list')")
     @GetMapping("/list")
@@ -42,8 +55,31 @@ public class AppUserMinerController extends BaseController {
     @PreAuthorize("@ss.hasPermi('admin:appUserMiner:add')")
     @Log(title = "APP用户矿机", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody AppUserMiner entity){
-        return toAjax(appUserMinerService.insert(entity));
+    public AjaxResult add(@RequestBody AppUserMinerAddReq req){
+        if (req == null || req.getUserId() == null) {
+            return AjaxResult.error("缺少用户ID");
+        }
+        if (req.getBrandId() == null) {
+            return AjaxResult.error("缺少矿机品牌");
+        }
+        if (StringUtils.isEmpty(req.getMiningUserName())) {
+            return AjaxResult.error("矿机名称不能为空");
+        }
+        AppUser user = appUserService.selectById(req.getUserId());
+        if (user == null) {
+            return AjaxResult.error("APP用户不存在");
+        }
+        if (StringUtils.isEmpty(user.getF2poolToken())) {
+            return AjaxResult.error("F2Pool Token为空");
+        }
+        AppUserMiner entity = appUserMinerService.createWithF2pool(
+                req.getUserId(),
+                req.getBrandId(),
+                req.getMiningUserName(),
+                req.getApiCode(),
+                req.getManagementFeeRate()
+        );
+        return AjaxResult.success(entity);
     }
 
     @PreAuthorize("@ss.hasPermi('admin:appUserMiner:edit')")
@@ -67,17 +103,4 @@ public class AppUserMinerController extends BaseController {
         return toAjax(appUserMinerService.updateStatus(id, status));
     }
 
-    @PreAuthorize("@ss.hasPermi('admin:appUserMiner:edit')")
-    @Log(title = "矿机绑定用户", businessType = BusinessType.UPDATE)
-    @PutMapping("/bind")
-    public AjaxResult bind(@RequestParam("id") Long id, @RequestParam("userId") Long userId){
-        return toAjax(appUserMinerService.bindUser(id, userId));
-    }
-
-    @PreAuthorize("@ss.hasPermi('admin:appUserMiner:edit')")
-    @Log(title = "矿机解绑用户", businessType = BusinessType.UPDATE)
-    @PutMapping("/unbind")
-    public AjaxResult unbind(@RequestParam("id") Long id){
-        return toAjax(appUserMinerService.unbindUser(id));
-    }
 }

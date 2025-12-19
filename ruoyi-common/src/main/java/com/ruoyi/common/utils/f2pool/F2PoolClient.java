@@ -116,6 +116,19 @@ public class F2PoolClient {
     }
 
     /**
+     * 新增子帐户
+     *
+     * @param miningUserName 子帐户名称
+     * @return 调用结果
+     */
+    public JSONObject addMiningUser(String miningUserName) {
+        String url = baseUrl + "/v2/mining_user/add";
+        Map<String, Object> params = new HashMap<>();
+        params.put("mining_user_name", miningUserName);
+        return JSON.parseObject(postJson(url, params));
+    }
+
+    /**
      * 获取用户当前资产信息
      *
      * @param currency                      币种

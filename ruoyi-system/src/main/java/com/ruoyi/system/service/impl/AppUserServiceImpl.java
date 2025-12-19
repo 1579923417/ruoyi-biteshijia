@@ -95,16 +95,12 @@ public class AppUserServiceImpl implements IAppUserService {
 
         BigDecimal zero = BigDecimal.ZERO;
 
-        BigDecimal totalMined = miners.stream()
-                .map(m -> m.getTotalMined() == null ? zero : m.getTotalMined())
-                .reduce(zero, BigDecimal::add);
+        BigDecimal totalMined = BigDecimal.ZERO; // totalMined removed from DB
 
-        BigDecimal yesterdayMined = miners.stream()
-                .map(m -> m.getYesterdayMined() == null ? zero : m.getYesterdayMined())
-                .reduce(zero, BigDecimal::add);
+        BigDecimal yesterdayMined = BigDecimal.ZERO; // yesterdayMined removed from DB
 
         BigDecimal todayMined = miners.stream()
-                .map(m -> m.getTodayMined() == null ? zero : m.getTodayMined())
+                .map(m -> m.getEstimatedTodayIncome() == null ? zero : m.getEstimatedTodayIncome())
                 .reduce(zero, BigDecimal::add);
 
 
@@ -152,8 +148,9 @@ public class AppUserServiceImpl implements IAppUserService {
             AppUserMinerItemVo item = new AppUserMinerItemVo();
             item.setId(m.getId());
             item.setBrandName(m.getBrandName());
+            item.setMiningUserName(m.getMiningUserName());
             item.setApiCode(m.getApiCode());
-            item.setTotalMined(m.getTotalMined());
+            item.setTotalIncome(m.getTotalIncome());
             BigDecimal hr = zero;
             if (m.getBrandId() != null){
                 MinerBrand b = minerBrandService.selectById(m.getBrandId());

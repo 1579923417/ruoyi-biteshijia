@@ -1,12 +1,21 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="90px">
+      <el-form-item label="矿机名称">
+        <el-input v-model="queryParams.miningUserName" placeholder="请输入矿机名称" clearable style="width: 220px" @keyup.enter.native="handleQuery" />
+      </el-form-item>
       <el-form-item label="关联码">
         <el-input v-model="queryParams.apiCode" placeholder="请输入矿机关联码" clearable style="width: 220px" @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item label="品牌">
         <el-select v-model="queryParams.brandId" placeholder="请选择品牌" clearable style="width: 220px">
           <el-option v-for="b in brandOptions" :key="b.id" :label="b.brandName" :value="b.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="矿机状态">
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 220px">
+          <el-option label="正常" :value="1" />
+          <el-option label="停用" :value="0" />
         </el-select>
       </el-form-item>
       <el-form-item label="用户ID">
@@ -32,19 +41,19 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="矿机ID" prop="id" align="center" width="100" />
+      <el-table-column label="矿机名称" prop="miningUserName" align="center" width="180" />
       <el-table-column label="关联码" prop="apiCode" align="center" width="180" />
       <el-table-column label="品牌名称" prop="brandName" align="center" width="180" />
-      <el-table-column label="用户ID" prop="userId" align="center" width="120" />
+      <el-table-column label="用户名称" prop="userName" align="center" width="120" />
       <el-table-column label="管理费比率" prop="managementFeeRate" align="center" width="140" />
-      <el-table-column label="累计已挖" prop="totalMined" align="center" width="140" />
-      <el-table-column label="昨日已挖" prop="yesterdayMined" align="center" width="140" />
-      <el-table-column label="今日已挖" prop="todayMined" align="center" width="140" />
+      <el-table-column label="今日预计" prop="estimatedTodayIncome" align="center" width="140" />
+      <el-table-column label="昨日收益" prop="yesterdayIncome" align="center" width="140" />
       <el-table-column label="累计收益" prop="totalIncome" align="center" width="140" />
-      <el-table-column label="启用状态" align="center" prop="status" width="120">
-        <template slot-scope="scope">
-          <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" @change="handleStatusChange(scope.row)" v-hasPermi="['app:appUserMiner:edit']"></el-switch>
-        </template>
-      </el-table-column>
+        <el-table-column label="启用状态" align="center" prop="status" width="120">
+          <template slot-scope="scope">
+            <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" disabled></el-switch>
+          </template>
+        </el-table-column>
       <el-table-column label="创建时间" prop="createTime" align="center" width="180">
         <template slot-scope="scope">
           {{ formatTime(scope.row.createTime) }}
@@ -58,7 +67,6 @@
       <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="openEdit(scope.row)" v-hasPermi="['app:appUserMiner:edit']">编辑</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['app:appUserMiner:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -68,11 +76,6 @@
       <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="120px">
         <el-form-item label="矿机关联码" prop="apiCode">
           <el-input v-model="editForm.apiCode" placeholder="请输入矿机关联码" />
-        </el-form-item>
-        <el-form-item label="关联用户" prop="userId">
-          <el-select v-model="editForm.userId" placeholder="请选择关联用户" clearable filterable style="width: 300px">
-            <el-option v-for="u in userOptions" :key="u.id" :label="u.name + ' (' + u.phone + ') '" :value="u.id" />
-          </el-select>
         </el-form-item>
         <el-form-item label="管理费比率" prop="managementFeeRate">
           <el-input-number v-model="editForm.managementFeeRate" :precision="2" :step="0.01" :min="0" />
@@ -86,11 +89,6 @@
 
     <el-dialog title="批量编辑矿机" :visible.sync="batchOpen" width="600px" append-to-body>
       <el-form ref="batchFormRef" :model="batchForm" :rules="batchRules" label-width="120px">
-        <el-form-item label="关联用户" prop="userId">
-          <el-select v-model="batchForm.userId" placeholder="请选择关联用户" clearable filterable style="width: 300px">
-            <el-option v-for="u in userOptions" :key="u.id" :label="u.name + ' (' + u.phone + ') '" :value="u.id" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="管理费比率" prop="managementFeeRate">
           <el-input-number v-model="batchForm.managementFeeRate" :precision="2" :step="0.01" :min="0" />
         </el-form-item>
@@ -101,15 +99,26 @@
       </div>
     </el-dialog>
 
-    <el-dialog title="批量添加矿机" :visible.sync="addOpen" width="600px" append-to-body>
+    <el-dialog title="添加矿机" :visible.sync="addOpen" width="600px" append-to-body>
       <el-form ref="addFormRef" :model="addForm" :rules="addRules" label-width="120px">
         <el-form-item label="矿机品牌" prop="brandId">
           <el-select v-model="addForm.brandId" placeholder="请选择品牌" filterable clearable style="width: 300px">
             <el-option v-for="b in brandOptions" :key="b.id" :label="b.brandName" :value="b.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="添加数量" prop="count">
-          <el-input-number v-model="addForm.count" :min="1" :step="1" />
+        <el-form-item label="APP用户" prop="userId">
+          <el-select v-model="addForm.userId" placeholder="请选择APP用户" filterable clearable style="width: 300px">
+            <el-option v-for="u in userOptions" :key="u.id" :label="u.name || u.phone" :value="u.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="矿机名称" prop="miningUserName">
+          <el-input v-model="addForm.miningUserName" placeholder="2-15个小写字母或数字，且不能以数字开头" />
+        </el-form-item>
+        <el-form-item label="关联码" prop="apiCode">
+          <el-input v-model="addForm.apiCode" placeholder="请输入矿机关联码" />
+        </el-form-item>
+        <el-form-item label="管理费比率" prop="managementFeeRate">
+          <el-input-number v-model="addForm.managementFeeRate" :precision="2" :step="0.01" :min="0" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -144,8 +153,17 @@ export default {
       batchForm: { userId: undefined, managementFeeRate: 0 },
       batchRules: {},
       addOpen: false,
-      addForm: { brandId: undefined, count: 1 },
-      addRules: { brandId: [{ required: true, message: '请选择品牌', trigger: 'change' }], count: [{ required: true, message: '请输入数量', trigger: 'change' }] }
+      addForm: { brandId: undefined, userId: undefined, miningUserName: '', apiCode: '', managementFeeRate: 0 },
+      addRules: {
+        brandId: [{ required: true, message: '请选择品牌', trigger: 'change' }],
+        userId: [{ required: true, message: '请选择APP用户', trigger: 'change' }],
+        miningUserName: [
+          { required: true, message: '请输入矿机名称', trigger: 'blur' },
+          { pattern: /^[a-z][a-z0-9]{1,14}$/, message: '请输入2-15个小写字母或数字，且不能以数字开头', trigger: 'blur' }
+        ],
+        apiCode: [{ required: true, message: '请输入矿机关联码', trigger: 'blur' }],
+        managementFeeRate: [{ required: true, message: '请输入管理费比率', trigger: 'change' }]
+      }
     }
   },
   created() {
@@ -169,18 +187,18 @@ export default {
       }).catch(() => { this.loading = false })
     },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
-    resetQuery() { this.queryParams = { pageNum: 1, pageSize: 10, apiCode: undefined, brandId: undefined, userId: undefined, status: undefined }; this.getList() }
+    resetQuery() { this.queryParams = { pageNum: 1, pageSize: 10, miningUserName: undefined, apiCode: undefined, brandId: undefined, userId: undefined, status: undefined }; this.getList() }
     ,
     formatTime(val) { return parseTime(val, '{y}-{m}-{d} {h}:{i}:{s}') },
     handleSelectionChange(selection) { this.ids = selection.map(i => i.id) },
     openEdit(row) {
-      this.editForm = { id: row.id, apiCode: row.apiCode, userId: row.userId, managementFeeRate: row.managementFeeRate }
+      this.editForm = { id: row.id, miningUserName: row.miningUserName, apiCode: row.apiCode, userId: row.userId, managementFeeRate: row.managementFeeRate }
       this.editOpen = true
     },
     submitEdit() {
       this.$refs.editFormRef.validate(valid => {
         if (!valid) return
-        const payload = { id: this.editForm.id, apiCode: this.editForm.apiCode, managementFeeRate: this.editForm.managementFeeRate }
+        const payload = { id: this.editForm.id, miningUserName: this.editForm.miningUserName, apiCode: this.editForm.apiCode, managementFeeRate: this.editForm.managementFeeRate }
         updateUserMiner(payload).then(() => {
           if (this.editForm.userId) {
             return bindMiner(this.editForm.id, this.editForm.userId)
@@ -207,28 +225,18 @@ export default {
       })
       Promise.all(tasks).then(() => { this.$modal.msgSuccess('批量保存成功'); this.batchOpen = false; this.getList() })
     },
-    openAdd() { this.addForm = { brandId: undefined, count: 1 }; this.addOpen = true },
+    openAdd() { this.addForm = { brandId: undefined, userId: undefined, miningUserName: '', apiCode: '', managementFeeRate: 0 }; this.addOpen = true },
     submitAdd() {
       this.$refs.addFormRef.validate(valid => {
         if (!valid) return
-        const promises = []
-        for (let i = 0; i < this.addForm.count; i++) {
-          const apiCode = `M-${this.addForm.brandId}-${Date.now()}-${i+1}`
-          promises.push(addUserMiner({ brandId: this.addForm.brandId, apiCode }))
+        const payload = {
+          brandId: this.addForm.brandId,
+          userId: this.addForm.userId,
+          miningUserName: this.addForm.miningUserName,
+          apiCode: this.addForm.apiCode,
+          managementFeeRate: this.addForm.managementFeeRate
         }
-        Promise.all(promises).then(() => { this.$modal.msgSuccess('添加成功'); this.addOpen = false; this.getList() })
-      })
-    },
-    handleDelete(row) {
-      const id = row.id || this.ids[0]
-      if (!id) return
-      this.$modal.confirm('确认删除该矿机吗？').then(() => delUserMiner(id)).then(() => { this.$modal.msgSuccess('删除成功'); this.getList() })
-    },
-    handleStatusChange(row) {
-      changeMinerStatus(row.id, row.status).then(() => {
-        this.$modal.msgSuccess('状态已更新')
-      }).catch(() => {
-        row.status = row.status === 1 ? 0 : 1
+        addUserMiner(payload).then(() => { this.$modal.msgSuccess('添加成功'); this.addOpen = false; this.getList() })
       })
     }
   }

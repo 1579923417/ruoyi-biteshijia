@@ -9,22 +9,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="userId"            column="user_id"           />
         <result property="brandId"           column="brand_id"          />
         <result property="brandName"         column="brand_name"        />
+        <result property="miningUserName"    column="mining_user_name"  />
         <result property="apiCode"           column="api_code"          />
         <result property="managementFeeRate" column="management_fee_rate" />
-        <result property="totalMined"        column="total_mined"       />
-        <result property="yesterdayMined"    column="yesterday_mined"   />
-        <result property="todayMined"        column="today_mined"       />
+        <result property="estimatedTodayIncome" column="estimated_today_income" />
         <result property="totalIncome"       column="total_income"      />
         <result property="yesterdayIncome"   column="yesterday_income"  />
         <result property="status"            column="status"            />
         <result property="createTime"        column="create_time"       />
         <result property="updateTime"        column="update_time"       />
+        <result property="userName"          column="user_name"         />
     </resultMap>
 
     <sql id="selectVo">
-        select aum.id, aum.user_id, aum.brand_id, mb.brand_name as brand_name, aum.api_code, aum.management_fee_rate, aum.total_mined, aum.yesterday_mined, aum.today_mined, aum.total_income, aum.yesterday_income, aum.status, aum.create_time, aum.update_time
+        select aum.id, aum.user_id, aum.brand_id, mb.brand_name as brand_name, IFNULL(u.name, u.phone) as user_name, aum.mining_user_name, aum.api_code, aum.management_fee_rate, aum.estimated_today_income, aum.total_income, aum.yesterday_income, aum.status, aum.create_time, aum.update_time
         from app_user_miner aum
         left join miner_brand mb on aum.brand_id = mb.id
+        left join app_user u on aum.user_id = u.id
     </sql>
 
     <select id="selectById" parameterType="java.lang.Long" resultMap="AppUserMinerResult">
@@ -37,6 +38,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>
             <if test="userId != null">and user_id = #{userId}</if>
             <if test="brandId != null">and brand_id = #{brandId}</if>
+            <if test="miningUserName != null and miningUserName != ''">and mining_user_name like concat('%', #{miningUserName}, '%')</if>
             <if test="apiCode != null and apiCode != ''">and api_code like concat('%', #{apiCode}, '%')</if>
             <if test="status != null">and status = #{status}</if>
         </where>
@@ -44,8 +46,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <insert id="insert" parameterType="com.ruoyi.system.domain.AppUserMiner" useGeneratedKeys="true" keyProperty="id">
-        insert into app_user_miner(user_id, brand_id, api_code, management_fee_rate, total_mined, yesterday_mined, today_mined, total_income, yesterday_income, status)
-        values(#{userId}, #{brandId}, #{apiCode}, #{managementFeeRate}, #{totalMined}, #{yesterdayMined}, #{todayMined}, #{totalIncome}, #{yesterdayIncome}, #{status})
+        insert into app_user_miner(user_id, brand_id, mining_user_name, api_code, management_fee_rate, estimated_today_income, total_income, yesterday_income, status)
+        values(#{userId}, #{brandId}, #{miningUserName}, #{apiCode}, #{managementFeeRate}, #{estimatedTodayIncome}, #{totalIncome}, #{yesterdayIncome}, #{status})
     </insert>
 
     <update id="update" parameterType="com.ruoyi.system.domain.AppUserMiner">
@@ -53,11 +55,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <set>
             <if test="userId != null">user_id = #{userId},</if>
             <if test="brandId != null">brand_id = #{brandId},</if>
+            <if test="miningUserName != null">mining_user_name = #{miningUserName},</if>
             <if test="apiCode != null">api_code = #{apiCode},</if>
             <if test="managementFeeRate != null">management_fee_rate = #{managementFeeRate},</if>
-            <if test="totalMined != null">total_mined = #{totalMined},</if>
-            <if test="yesterdayMined != null">yesterday_mined = #{yesterdayMined},</if>
-            <if test="todayMined != null">today_mined = #{todayMined},</if>
+            <if test="estimatedTodayIncome != null">estimated_today_income = #{estimatedTodayIncome},</if>
             <if test="totalIncome != null">total_income = #{totalIncome},</if>
             <if test="yesterdayIncome != null">yesterday_income = #{yesterdayIncome},</if>
             <if test="status != null">status = #{status},</if>
