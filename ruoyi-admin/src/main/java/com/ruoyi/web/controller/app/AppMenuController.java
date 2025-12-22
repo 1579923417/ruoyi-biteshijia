@@ -55,7 +55,7 @@ public class AppMenuController extends BaseController {
      * @param query 查询条件
      * @return 根菜单分页列表
      */
-    @PreAuthorize("@ss.hasPermi('admin:appMenu:list')")
+    @PreAuthorize("@ss.hasPermi('app:appMenu:list')")
     @GetMapping("/roots")
     public TableDataInfo roots(AppMenu query){
         query.setParentId(0L);
