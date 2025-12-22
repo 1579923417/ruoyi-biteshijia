@@ -118,6 +118,7 @@ public class F2poolPublicServiceImpl implements F2poolPublicService {
                 m.put("output24h", item.get("output24h"));
                 m.put("network_hashrate", item.get("network_hashrate"));
                 m.put("algorithm", item.get("algorithm"));
+                m.put("display_currency_code", item.get("display_currency_code"));
                 list.add(m);
             }
         }
