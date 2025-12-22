@@ -201,6 +201,7 @@ export default {
         pageSize: 10,
         noticeTitle: undefined,
         createBy: undefined,
+        noticeType: undefined,
         status: undefined
       },
       // 表单参数
@@ -219,8 +220,18 @@ export default {
   computed: {
     noticeTypeOptions() {
       const opts = (this.dict && this.dict.type && this.dict.type.sys_notice_type) ? this.dict.type.sys_notice_type.slice() : []
-      if (!opts.find(o => String(o.value) === '3')) {
-        opts.push({ value: '3', label: 'APP通知' })
+      const hasAppNotice = opts.some(o => String(o.value) === '3' || String(o.raw && o.raw.dictValue) === '3')
+      if (!hasAppNotice) {
+        opts.push({
+          label: 'APP通知',
+          value: '3',
+          raw: {
+            dictLabel: 'APP通知',
+            dictValue: '3',
+            listClass: 'danger',
+            cssClass: ''
+          }
+        })
       }
       return opts
     }
