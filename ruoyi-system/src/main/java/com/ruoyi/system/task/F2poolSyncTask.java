@@ -1,4 +1,4 @@
-package com.ruoyi.web.task;
+package com.ruoyi.system.task;
 
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import com.ruoyi.system.service.F2PoolService;
  *
  * @author Jamie
  */
-@Component
+@Component("f2poolSyncTask")
 public class F2poolSyncTask {
     @Autowired
     private F2PoolService f2PoolService;
@@ -27,7 +27,6 @@ public class F2poolSyncTask {
      * 统一完成所有用户下矿机的数据拉取与本地更新。
      * </p>
      */
-    @Scheduled(cron = "0 0 * * * ?")
     public void sync() {
         f2PoolService.syncMinerData();
     }

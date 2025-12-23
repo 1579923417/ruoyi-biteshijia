@@ -37,10 +37,8 @@ public class AppUserController {
     /**
      * APP 用户登录（手机号 + 密码）
      *
-     * <p>
      * 登录成功后返回登录凭证信息（token、有效期等），
      * 前端需在后续请求的 Authorization 头中携带该 token。
-     * </p>
      *
      * @param body 请求体，包含 phone、password
      * @return AjaxResult 登录结果
@@ -58,9 +56,7 @@ public class AppUserController {
     /**
      * 发送登录验证码
      *
-     * <p>
      * 用于验证码登录场景，验证码发送至用户手机号。
-     * </p>
      *
      * @param phone 手机号
      */
@@ -75,10 +71,8 @@ public class AppUserController {
     /**
      * 验证码登录
      *
-     * <p>
      * 校验手机号与验证码后完成登录，
      * 登录成功返回 token 信息。
-     * </p>
      *
      * @param phone 手机号
      * @param code  验证码
@@ -189,9 +183,7 @@ public class AppUserController {
     /**
      * APP 用户退出登录
      *
-     * <p>
      * 清除当前用户的登录态（token 失效）。
-     * </p>
      *
      * @param request 请求对象
      */

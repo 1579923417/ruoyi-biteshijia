@@ -11,9 +11,15 @@ import com.ruoyi.system.service.IAppUserMinerService;
 import com.ruoyi.system.service.IAppUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.ruoyi.common.utils.http.HttpUtils;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
+import javax.annotation.PostConstruct;
+import com.ruoyi.system.factory.ProxyFactory;
 
 import java.util.List;
 import java.math.BigDecimal;
@@ -21,13 +27,9 @@ import java.math.BigDecimal;
 /**
  * App 用户数据同步定时任务
  *
- * <p>
- * 该任务用于<strong>周期性同步 F2Pool 数据到本地数据库</strong>，主要包含：
- * <ul>
- *   <li>同步用户层面的统计数据（矿机数、总收益、今日/昨日收益）</li>
- *   <li>同步已存在矿机的收益数据（不负责创建矿机）</li>
- * </ul>
- * </p>
+ * 该任务用于周期性同步 F2Pool 数据到本地数据库，主要包含：
+ *  - 同步用户层面的统计数据（矿机数、总收益、今日/昨日收益）
+ *  - 同步已存在矿机的收益数据（不负责创建矿机）
  * 
  * @author Jamie
  */
@@ -43,21 +45,19 @@ public class AppUserSyncTask {
     @Autowired
     private IAppUserMinerService appUserMinerService;
 
+    @Autowired
+    private ProxyFactory proxyFactory;
+
+    private RestTemplate proxyRestTemplate;
+
     /**
      * 同步所有 App 用户的 F2Pool 数据
      *
-     * <p>
      * 执行流程：
-     * <ol>
-     *   <li>查询所有 App 用户</li>
-     *   <li>过滤未配置 F2Pool Token 的用户</li>
-     *   <li>逐个用户同步概览数据和矿机收益</li>
-     * </ol>
-     * </p>
+     *  - 查询所有 App 用户
+     *  - 过滤未配置 F2Pool Token 的用户
+     *  - 逐个用户同步概览数据和矿机收益
      *
-     * <p>
-     * 通常由定时调度器（如每日 / 每小时）触发执行
-     * </p>
      */
     public void syncAll() {
         System.out.println("开始执行App用户数据同步任务...");
@@ -190,12 +190,25 @@ public class AppUserSyncTask {
 
     private BigDecimal fetchRate(String url) {
         try {
-            String rsp = HttpUtils.sendGet(url);
-            if (rsp == null || rsp.isEmpty()) return null;
-            JSONObject obj = JSON.parseObject(rsp);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("User-Agent", "Mozilla/5.0 (Java Proxy RestTemplate)");
+            HttpEntity<String> entity = new HttpEntity<>("{}", headers);
+            String resp = proxyRestTemplate.postForObject(url, entity, String.class);
+            if (resp == null || resp.isEmpty()) return null;
+            JSONObject obj = JSON.parseObject(resp);
             return obj.getBigDecimal("Rate");
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @PostConstruct
+    private void init() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setProxy(proxyFactory.buildHttpProxy());
+        factory.setConnectTimeout(15000);
+        factory.setReadTimeout(30000);
+        this.proxyRestTemplate = new RestTemplate(factory);
     }
 }

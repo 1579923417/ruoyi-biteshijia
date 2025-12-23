@@ -26,11 +26,11 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="ID" prop="id" align="center" width="80" />
-      <el-table-column label="名称" prop="name" align="center" width="180" />
-      <el-table-column label="具体地区" prop="country" align="center" width="220" />
-      <el-table-column label="电价(CNY/度)" prop="powerPriceCny" align="center" width="140" />
-      <el-table-column label="供电时间" prop="supplyPeriod" align="center" width="120" />
-      <el-table-column label="状态" prop="status" align="center" width="100">
+      <el-table-column label="名称" prop="name" align="center" />
+      <el-table-column label="具体地区" prop="country" align="center"  />
+      <el-table-column label="电价(CNY/度)" prop="powerPriceCny" align="center"  />
+      <el-table-column label="供电时间" prop="supplyPeriod" align="center"  />
+      <el-table-column label="状态" prop="status" align="center" >
         <template slot-scope="scope">
           <el-tag :type="scope.row.status===1?'success':'info'">{{ scope.row.status===1?'展示':'隐藏' }}</el-tag>
         </template>

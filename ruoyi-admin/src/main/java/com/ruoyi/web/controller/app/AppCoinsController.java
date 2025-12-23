@@ -61,20 +61,13 @@ public class AppCoinsController {
      * 包括但不限于：
      * </p>
      *
-     * <ul>
-     *   <li>id：矿机ID</li>
-     *   <li>name：矿机名称</li>
-     *   <li>display_currency_code：展示币种</li>
-     *   <li>hashrate_unit_value：算力值</li>
-     *   <li>power：功耗</li>
-     *   <li>coins_24h：24小时收益</li>
-     *   <li>company_icon：厂商图标</li>
-     * </ul>
-     *
-     * <p>
-     * 前端无需传入任何参数，
-     * 可直接用于排行列表或卡片式展示。
-     * </p>
+     * id：矿机ID
+     * name：矿机名称
+     * display_currency_code：展示币种
+     * hashrate_unit_value：算力值
+     * power：功耗
+     * coins_24h：24小时收益
+     * company_icon：厂商图标
      *
      * @return AjaxResult 包含矿机排行信息列表
      */

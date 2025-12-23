@@ -36,13 +36,13 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="ID" prop="id" align="center" width="80" />
-      <el-table-column label="名称" prop="name" align="center" width="180" />
-      <el-table-column label="地区" prop="location" align="center" width="180" />
-      <el-table-column label="能源" prop="energyType" align="center" width="120" />
-      <el-table-column label="丰水期价" prop="priceWetSeason" align="center" width="120" />
-      <el-table-column label="枯水期价" prop="priceDrySeason" align="center" width="120" />
-      <el-table-column label="全年价" prop="priceAllYear" align="center" width="120" />
-      <el-table-column label="状态" prop="status" align="center" width="100">
+      <el-table-column label="名称" prop="name" align="center"  />
+      <el-table-column label="地区" prop="location" align="center"  />
+      <el-table-column label="能源" prop="energyType" align="center"  />
+      <el-table-column label="丰水期价" prop="priceWetSeason" align="center" />
+      <el-table-column label="枯水期价" prop="priceDrySeason" align="center"  />
+      <el-table-column label="全年价" prop="priceAllYear" align="center" />
+      <el-table-column label="状态" prop="status" align="center" >
         <template slot-scope="scope">
           <el-tag :type="scope.row.status===1?'success':'info'">{{ scope.row.status===1?'展示':'隐藏' }}</el-tag>
         </template>
