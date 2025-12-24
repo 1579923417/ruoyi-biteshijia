@@ -31,16 +31,12 @@ public class AppCoinsController {
     /**
      * 获取 PoW 币种 Top100 排行
      *
-     * <p>
      * 返回当前主流 PoW 币种的 Top100 排行列表，
      * 服务层已对第三方返回数据进行精简处理，
      * 前端无需再次做复杂字段解析。
-     * </p>
      *
-     * <p>
      * 返回结果为 List&lt;Map&gt; 结构，
      * 主要用于 APP 首页或排行页面展示。
-     * </p>
      *
      * @return AjaxResult 包含 PoW Top100 排行数据
      */
@@ -55,11 +51,9 @@ public class AppCoinsController {
     /**
      * 获取矿机排行信息（简化字段）
      *
-     * <p>
      * 返回当前主流矿机的排行信息，
      * 数据已在服务层进行裁剪，仅保留前端展示所需字段，
      * 包括但不限于：
-     * </p>
      *
      * id：矿机ID
      * name：矿机名称

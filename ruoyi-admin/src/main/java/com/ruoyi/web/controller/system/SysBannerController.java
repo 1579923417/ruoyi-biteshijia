@@ -32,10 +32,8 @@ public class SysBannerController extends BaseController {
     /**
      * 查询手机轮播图列表
      *
-     * <p>
      * 支持根据轮播图标题、状态等条件进行查询，
      * 并通过 {@link BaseController#startPage()} 实现分页返回。
-     * </p>
      *
      * @param query 查询条件封装对象
      * @return 分页后的轮播图列表
@@ -51,10 +49,6 @@ public class SysBannerController extends BaseController {
     /**
      * 查询单个轮播图详情
      *
-     * <p>
-     * 用于后台查看或编辑轮播图前的数据回显。
-     * </p>
-     *
      * @param id 轮播图ID
      * @return 轮播图详细信息
      */
@@ -66,11 +60,6 @@ public class SysBannerController extends BaseController {
 
     /**
      * 新增手机轮播图
-     *
-     * <p>
-     * 用于后台新增一条轮播图配置，
-     * 通常包含图片地址、跳转链接、展示顺序等信息。
-     * </p>
      *
      * @param entity 轮播图实体对象
      * @return 操作结果
@@ -85,11 +74,6 @@ public class SysBannerController extends BaseController {
     /**
      * 修改手机轮播图
      *
-     * <p>
-     * 对已有轮播图进行维护更新，
-     * 包括图片替换、跳转地址修改、排序调整等。
-     * </p>
-     *
      * @param entity 轮播图实体对象
      * @return 操作结果
      */
@@ -103,10 +87,6 @@ public class SysBannerController extends BaseController {
     /**
      * 删除手机轮播图（支持批量删除）
      *
-     * <p>
-     * 通常用于清理无效、过期或录入错误的轮播图数据。
-     * </p>
-     *
      * @param ids 轮播图ID数组
      * @return 操作结果
      */
@@ -119,11 +99,6 @@ public class SysBannerController extends BaseController {
 
     /**
      * 修改轮播图展示状态
-     *
-     * <p>
-     * 用于快速启用或禁用轮播图，
-     * 不删除数据，仅控制是否在 APP 首页展示。
-     * </p>
      *
      * @param id 轮播图ID
      * @param status 展示状态（如：1=启用，0=禁用）

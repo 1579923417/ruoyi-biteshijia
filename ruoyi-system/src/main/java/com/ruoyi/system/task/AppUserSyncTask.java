@@ -30,7 +30,18 @@ import java.math.BigDecimal;
  * 该任务用于周期性同步 F2Pool 数据到本地数据库，主要包含：
  *  - 同步用户层面的统计数据（矿机数、总收益、今日/昨日收益）
  *  - 同步已存在矿机的收益数据（不负责创建矿机）
- * 
+ *
+ * 【同步范围】
+ * 用户维度（app_user 表）
+ *   - 矿机数量（miner_count）
+ *   - 总收益（total_income）
+ *   - 今日收益（today_income）
+ *   - 昨日收益（yesterday_income）
+ *
+ * 矿机维度（app_user_miner 表）
+ *   - 仅同步【已存在矿机】的收益数据
+ *   - 不在此任务中创建新矿机
+ *
  * @author Jamie
  */
 @Component("appUserSyncTask")
@@ -91,13 +102,9 @@ public class AppUserSyncTask {
     /**
      * 同步单个用户的 F2Pool 数据
      *
-     * <p>
      * 包含两部分：
-     * <ul>
-     *   <li>用户维度的概览统计数据</li>
-     *   <li>该用户下已存在矿机的收益数据</li>
-     * </ul>
-     * </p>
+     *  - 用户维度数据（矿机数、收益汇总）
+     *  - 该用户下矿机的收益数据
      *
      * @param user App 用户实体
      */
@@ -147,13 +154,9 @@ public class AppUserSyncTask {
     /**
      * 同步单台矿机的收益数据
      *
-     * <p>
      * 说明：
-     * <ul>
-     *   <li>仅更新数据库中<strong>已存在</strong>的矿机</li>
-     *   <li>不会在此方法中新增矿机记录</li>
-     * </ul>
-     * </p>
+     *   仅更新数据库中已存在的矿机
+     *   不会在此方法中新增矿机记录
      *
      * @param userId 用户ID
      * @param item   F2Pool 返回的矿机数据项
@@ -180,6 +183,12 @@ public class AppUserSyncTask {
         }
     }
 
+    /**
+     * BTC → CNY 换算
+     *
+     * 计算方式：
+     * BTC × BTC→USDT 汇率 × USDT→CNY 汇率
+     */
     private BigDecimal convertBtcToCny(BigDecimal btcAmount) {
         if (btcAmount == null) return BigDecimal.ZERO;
         BigDecimal btcToUsdt = fetchRate("https://www.exchange-rates.org/zh/api/v2/rates/lookup?isoTo=USDT&isoFrom=BTC&amount=1&pageCode=ConverterForPair");
@@ -188,6 +197,13 @@ public class AppUserSyncTask {
         return btcAmount.multiply(btcToUsdt).multiply(usdtToCny);
     }
 
+    /**
+     * 通过第三方汇率接口获取实时汇率
+     *
+     * - 通过代理访问（防止被封）
+     * - 使用 RestTemplate
+     * - 请求失败返回 null
+     */
     private BigDecimal fetchRate(String url) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -203,6 +219,12 @@ public class AppUserSyncTask {
         }
     }
 
+    /**
+     * 初始化带代理的 RestTemplate
+     *
+     * - 系统启动后自动执行
+     * - 所有汇率请求统一走代理
+     */
     @PostConstruct
     private void init() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();

@@ -118,9 +118,7 @@ public class AppMenuController extends BaseController {
     /**
      * 修改 APP 菜单状态
      *
-     * <p>
      * 用于启用或禁用菜单，不影响菜单结构，仅控制前端是否展示
-     * </p>
      *
      * @param id 菜单ID
      * @param status 状态值（0：禁用，1：启用）
@@ -136,9 +134,7 @@ public class AppMenuController extends BaseController {
     /**
      * 获取 APP 菜单类型枚举列表
      *
-     * <p>
      * 返回菜单类型的 code / desc，用于前端下拉选择
-     * </p>
      *
      * @return 菜单类型枚举集合
      */

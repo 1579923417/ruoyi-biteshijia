@@ -37,6 +37,7 @@ public class AppUserMinerController extends BaseController {
 
     @Autowired
     private IAppUserService appUserService;
+
     /**
      * 查询 APP 用户矿机列表（分页）
      *
@@ -119,6 +120,7 @@ public class AppUserMinerController extends BaseController {
     public AjaxResult edit(@RequestBody AppUserMiner entity){
         return toAjax(appUserMinerService.update(entity));
     }
+
     /**
      * 删除 APP 用户矿机（支持批量）
      *
@@ -131,6 +133,7 @@ public class AppUserMinerController extends BaseController {
     public AjaxResult remove(@PathVariable Long[] ids){
         return toAjax(appUserMinerService.deleteByIds(ids));
     }
+
     /**
      * 修改 APP 用户矿机状态
      *

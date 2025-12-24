@@ -30,10 +30,8 @@ public class MinerFarmController extends BaseController {
     /**
      * 查询全球矿场信息列表
      *
-     * <p>
      * 支持根据矿场名称、国家、地区等条件进行查询，
      * 并通过 {@link BaseController#startPage()} 实现分页返回。
-     * </p>
      *
      * @param query 查询条件封装对象
      * @return 分页后的矿场信息列表
@@ -49,10 +47,8 @@ public class MinerFarmController extends BaseController {
     /**
      * 查询单个矿场信息详情
      *
-     * <p>
      * 根据矿场ID获取对应的详细信息，
      * 用于后台详情查看或编辑前的数据回显。
-     * </p>
      *
      * @param id 矿场ID
      * @return 矿场信息详情
@@ -65,11 +61,6 @@ public class MinerFarmController extends BaseController {
 
     /**
      * 新增全球矿场信息
-     *
-     * <p>
-     * 用于后台录入新的矿场数据，
-     * 通常包含矿场所在地区、基础规模、备注说明等信息。
-     * </p>
      *
      * @param entity 矿场信息实体
      * @return 操作结果
@@ -84,11 +75,6 @@ public class MinerFarmController extends BaseController {
     /**
      * 修改全球矿场信息
      *
-     * <p>
-     * 对已存在的矿场数据进行更新维护，
-     * 如矿场规模调整、状态变更或备注信息修改等。
-     * </p>
-     *
      * @param entity 矿场信息实体
      * @return 操作结果
      */
@@ -101,11 +87,6 @@ public class MinerFarmController extends BaseController {
 
     /**
      * 删除全球矿场信息（支持批量删除）
-     *
-     * <p>
-     * 建议仅在矿场数据录入错误或确定不再使用时执行删除，
-     * 避免影响历史算力统计或收益分析结果。
-     * </p>
      *
      * @param ids 矿场ID数组
      * @return 操作结果

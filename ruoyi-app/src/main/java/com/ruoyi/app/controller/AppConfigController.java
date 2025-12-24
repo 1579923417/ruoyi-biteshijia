@@ -27,11 +27,9 @@ public class AppConfigController {
     /**
      * 获取 APP 配置分组列表
      *
-     * <p>
      * 返回当前 APP 可用的全部配置项，
      * 数据通常按「配置分组」进行聚合，
      * 前端可按分组直接使用或缓存到本地。
-     * </p>
      *
      * @return AjaxResult 包含 APP 所需的配置分组数据
      */

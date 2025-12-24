@@ -33,12 +33,9 @@ public class AppUserController extends BaseController {
     /**
      * 用户列表查询
      *
-     * <p>
      * 支持：
-     * <ul>
-     *   <li>手机号精确查询</li>
-     *   <li>关键字模糊查询（用户名 / 手机号等）</li>
-     * </ul>
+     *   手机号精确查询
+     *   关键字模糊查询（用户名 / 手机号等）
      *
      * @param keyword 关键字（可选）
      * @param phone   手机号（可选）
@@ -75,17 +72,12 @@ public class AppUserController extends BaseController {
     /**
      * 新增 APP 用户
      *
-     * <p>
      * 校验规则：
-     * <ul>
-     *   <li>用户名、手机号不能为空</li>
-     *   <li>手机号必须唯一</li>
-     * </ul>
-     *
-     * <p>
-     * 如果未传入密码，则默认设置为：1234567
+     *   用户名、手机号不能为空
+     *   手机号必须唯一
+     * 
+     * 如果未传入密码，则默认设置为：123456
      * （并进行加密存储）
-     * </p>
      *
      * @param entity 用户实体
      * @return 操作结果
@@ -103,7 +95,7 @@ public class AppUserController extends BaseController {
         }
         if (StringUtils.isEmpty(entity.getPassword())) {
         // 设置固定默认密码为 "1234567"
-        entity.setPassword(SecurityUtils.encryptPassword("1234567"));
+        entity.setPassword(SecurityUtils.encryptPassword("123456"));
         }
         return toAjax(appUserService.insert(entity));
     }
@@ -111,12 +103,9 @@ public class AppUserController extends BaseController {
     /**
      * 编辑 APP 用户信息
      *
-     * <p>
      * 校验：
-     * <ul>
-     *   <li>ID 必须存在</li>
-     *   <li>手机号不可被其他用户占用</li>
-     * </ul>
+     *   ID 必须存在
+     *   手机号不可被其他用户占用
      *
      * @param entity 用户实体
      * @return 操作结果
@@ -151,9 +140,7 @@ public class AppUserController extends BaseController {
     /**
      * 重置 APP 用户登录密码
      *
-     * <p>
      * 默认重置为：123456（加密存储）
-     * </p>
      *
      * @param id 用户ID
      * @return 操作结果

@@ -27,11 +27,9 @@ public class MinerBrandController extends BaseController {
      */
     @Autowired
     private IMinerBrandService minerBrandService;
+
     /**
      * 查询矿机品牌列表（分页）
-     *
-     * 权限：
-     * - miner:minerBrand:list
      *
      * 说明：
      * - 支持条件查询（通过 MinerBrand 对象接收参数）
@@ -47,11 +45,9 @@ public class MinerBrandController extends BaseController {
         List<MinerBrand> list = minerBrandService.selectList(query);
         return getDataTable(list);
     }
+
     /**
      * 根据 ID 查询矿机品牌详情
-     *
-     * 权限：
-     * - miner:minerBrand:query
      *
      * @param id 矿机品牌主键 ID
      * @return 矿机品牌详细信息
@@ -61,14 +57,9 @@ public class MinerBrandController extends BaseController {
     public AjaxResult get(@PathVariable("id") Long id){
         return AjaxResult.success(minerBrandService.selectById(id));
     }
+
     /**
      * 新增矿机品牌
-     *
-     * 权限：
-     * - miner:minerBrand:add
-     *
-     * 日志：
-     * - 记录新增操作日志
      *
      * @param entity 矿机品牌实体
      * @return 操作结果
@@ -79,14 +70,9 @@ public class MinerBrandController extends BaseController {
     public AjaxResult add(@RequestBody MinerBrand entity){
         return toAjax(minerBrandService.insert(entity));
     }
+
     /**
      * 修改矿机品牌
-     *
-     * 权限：
-     * - miner:minerBrand:edit
-     *
-     * 日志：
-     * - 记录修改操作日志
      *
      * @param entity 矿机品牌实体
      * @return 操作结果
@@ -97,17 +83,9 @@ public class MinerBrandController extends BaseController {
     public AjaxResult edit(@RequestBody MinerBrand entity){
         return toAjax(minerBrandService.update(entity));
     }
+
     /**
      * 删除矿机品牌（支持批量）
-     *
-     * 权限：
-     * - miner:minerBrand:remove
-     *
-     * 日志：
-     * - 记录删除操作日志
-     *
-     * 说明：
-     * - 支持通过 ID 数组批量删除
      *
      * @param ids 矿机品牌主键 ID 集合
      * @return 操作结果
